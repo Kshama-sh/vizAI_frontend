@@ -26,7 +26,7 @@ function Login() {
   // };
 
   return (
-    <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
+    <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md m-auto mt-20">
       <h1 className="text-2xl font-bold text-center text-gray-900">
         Unlock a World of AI-Powered Insights!
       </h1>

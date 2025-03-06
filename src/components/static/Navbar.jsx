@@ -1,87 +1,73 @@
 import React, { useEffect, useState } from "react";
-import { Button } from "../ui/button";
 import { Link } from "react-router-dom";
-import "./Navbar.css";
+import { Bell, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 function Navbar() {
-  const [click, setCLick] = useState(false);
-  const [loggedIn, setLogin] = useState(false);
-  useEffect(() => {
-    setLogin(localStorage.getItem("login"));
-  }, [loggedIn]);
+  const [loggedIn, setLoggedIn] = useState(false);
 
-  const handleClick = () => setCLick(!click);
+  useEffect(() => {
+    setLoggedIn(localStorage.getItem("login") === "true");
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.clear();
+    setLoggedIn(false);
+  };
 
   return (
-    <>
-      <nav>
-        <div>
-          <Link to="/">Paws and claws</Link>
-          <div className="menu-icon" onClick={handleClick}>
-            <i className={click ? "fas fa-times" : "fas fa-bars"} />
-          </div>
-          <ul className={click ? "nav-menuactive" : "nav-menu"}>
-            <li>
-              <Link to="/" className="nav-links">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link to="/services" className="nav-links">
-                Services
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/products"
-                className="nav-links"
-                /*onClick={handleClick}*/
-              >
-                Products
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link to="/Support" className="nav-links">
-                Support
-              </Link>
-            </li>
-          </ul>
-          {loggedIn ? (
-            <>
-              <li classname="nav-item">
-                <Link to="/" className="nav-links prof">
-                  Profile
-                </Link>
-              </li>
-            </>
-          ) : (
-            <Link className="btn--outline" to="/SignUp">
-              Sign up
-            </Link>
-          )}
+    <nav className="bg-gray-900 text-white px-4 py-3 shadow-md flex justify-between items-center">
+      {/* Logo */}
+      <Link to="/" className="text-2xl font-bold">
+        VizAI
+      </Link>
 
-          {loggedIn ? (
-            <>
-              <li classname="nav-item log">
-                <button
-                  onClick={() => {
-                    localStorage.clear();
-                    setLogin(false);
-                  }}
-                  className="btn--outline"
-                >
-                  Logout
-                </button>
-              </li>
-            </>
-          ) : (
-            <Link className="btn--outline" to="/login">
-              Login
-            </Link>
-          )}
+      {/* Menu for Logged-in Users */}
+      {loggedIn ? (
+        <div className="flex items-center gap-6">
+          <Link to="/">Query</Link>
+          <Link to="/">Visualisation</Link>
+          <Link to="/">Dashboard</Link>
+          <Link to="/">Console</Link>
+
+          {/* Notification Icon */}
+          <Bell className="text-xl cursor-pointer" />
+
+          {/* Profile Dropdown using ShadCN */}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="cursor-pointer">
+              <User className="text-2xl" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link to="/profile">Account Details</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/docs">Documentation</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout} className="text-red-500">
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      </nav>
-    </>
+      ) : (
+        <div className="flex gap-4">
+          <Button variant="outline">
+            <Link to="/Login">Login</Link>
+          </Button>
+          <Button>
+            <Link to="/Signup">Signup</Link>
+          </Button>
+        </div>
+      )}
+    </nav>
   );
 }
 
