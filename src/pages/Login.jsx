@@ -8,22 +8,21 @@ function Login() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  // Handle login (To be implemented with backend API)
-  // const handleLogin = async () => {
-  //   try {
-  //     const response = await axios.post(" ", {
-  //       email,
-  //       password,
-  //     });
-  //     if (response.data.success) {
-  //       localStorage.setItem("login", response.data.success);
-  //       console.log("Logged in successfully");
-  //       navigate("/dashboard"); // Redirect after login
-  //     }
-  //   } catch (error) {
-  //     console.error("Login failed", error);
-  //   }
-  // };
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post(" ", {
+        email,
+        password,
+      });
+      if (response.data.success) {
+        localStorage.setItem("login", response.data.success);
+        console.log("Logged in successfully");
+        navigate("/Home");
+      }
+    } catch (error) {
+      console.error("Login failed", error);
+    }
+  };
 
   return (
     <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md m-auto mt-20">
@@ -62,7 +61,7 @@ function Login() {
         </div>
         <Button
           type="button"
-          // onClick={handleLogin}
+          onClick={handleLogin}
           className="w-full bg-blue-950 text-white py-3 rounded-lg transition"
         >
           Login
