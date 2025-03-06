@@ -42,7 +42,7 @@ function Signup() {
         />
         <Button
           type="submit"
-          className="w-full bg-blue-600 text-white py-3 rounded-lg transition"
+          className="w-full bg-blue-950 text-white py-3 rounded-lg transition"
         >
           Sign Up
         </Button>
