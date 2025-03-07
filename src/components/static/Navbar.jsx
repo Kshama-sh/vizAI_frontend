@@ -30,7 +30,7 @@ function Navbar() {
   };
 
   return (
-    <nav className="bg-gray-900 text-white px-4 py-3 shadow-md flex justify-between items-center">
+    <nav className="bg-amber-100 text-gray-900 px-4 py-3 shadow-md flex justify-between items-center">
       <Link to="/" className="text-2xl font-bold">
         <img
           src={logo}
@@ -46,11 +46,11 @@ function Navbar() {
           </button>
         </SheetTrigger>
         <SheetContent className={""}>
-          <div className="flex flex-col p-7 gap-4 mt-5">
+          <div className="flex flex-col p-7 gap-4 mt-5 ">
             <Button className="bg-blue-950">
               <Link to="/Login">Login</Link>
             </Button>
-            <Button className="bg-blue-950">
+            <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
               <Link to="/Signup">Signup</Link>
             </Button>
           </div>
@@ -60,28 +60,28 @@ function Navbar() {
       <NavigationMenu
         className={`lg:flex ${
           menuOpen ? "block" : "hidden"
-        } absolute top-16 right-0 w-full bg-gray-900 lg:static lg:w-auto`}
+        } absolute top-16 right-0 w-full lg:static lg:w-auto`}
       >
         <NavigationMenuList className="flex gap-6">
           {loggedIn ? (
             <>
               <NavigationMenuItem>
-                <Link to="/" className="hover:text-gray-400">
+                <Link to="/Query" className="hover:text-orange-500">
                   Query
                 </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link to="/" className="hover:text-gray-400">
+                <Link to="/" className="hover:text-orange-500">
                   Visualisation
                 </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link to="/" className="hover:text-gray-400">
+                <Link to="/" className="hover:text-orange-500">
                   Dashboard
                 </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link to="/" className="hover:text-gray-400">
+                <Link to="/" className="hover:text-orange-500">
                   Console
                 </Link>
               </NavigationMenuItem>
@@ -114,10 +114,10 @@ function Navbar() {
             </>
           ) : (
             <div className="flex gap-4">
-              <Button className="bg-blue-950">
+              <Button className="bg-gradient-to-r from-pink-700 to-purple-700">
                 <Link to="/Login">Login</Link>
               </Button>
-              <Button className="bg-blue-950">
+              <Button className="bg-gradient-to-r from-pink-700 to-purple-700">
                 <Link to="/Signup">Signup</Link>
               </Button>
             </div>

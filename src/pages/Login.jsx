@@ -1,23 +1,24 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-// import axios from "axios";
+import axios from "axios";
+import { useForm } from "react-hook-form";
 
 function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
+  const handleLogin = async (data) => {
     try {
-      const response = await axios.post(" ", {
-        email,
-        password,
-      });
-      if (response.data.success) {
-        localStorage.setItem("login", response.data.success);
+      const res = await axios.post("http://192.168.1.4:8000", data);
+      if (res.data.success) {
+        localStorage.setItem("login", res.data.success);
         console.log("Logged in successfully");
-        navigate("/Home");
+        navigate("/Console");
       }
     } catch (error) {
       console.error("Login failed", error);
@@ -31,7 +32,7 @@ function Login() {
       </h1>
       <p className="text-gray-500 text-center mt-2">Login to your account</p>
 
-      <form className="mt-6">
+      <form onSubmit={handleSubmit(handleLogin)} className="mt-6">
         <div>
           <label className="flex text-gray-700 font-medium flex-start">
             Email
@@ -39,11 +40,11 @@ function Login() {
           <input
             type="email"
             placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
             className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
           />
+          {errors.email && (
+            <p className="text-red-500 text-sm">{errors.email.message}</p>
+          )}
         </div>
 
         <div className="mt-4">
@@ -53,21 +54,20 @@ function Login() {
           <input
             type="password"
             placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
             className="w-full p-3 mb-3 border border-gray-300 rounded-lg"
-            required
           />
+          {errors.password && (
+            <p className="text-red-500 text-sm">{errors.password.message}</p>
+          )}
         </div>
+
         <Button
-          type="button"
-          onClick={handleLogin}
+          type="submit"
           className="w-full bg-blue-950 text-white py-3 rounded-lg transition"
         >
           Login
         </Button>
       </form>
-
       <p className="text-center text-gray-500 mt-4">
         Don't have an account?{" "}
         <span
