@@ -13,7 +13,9 @@ function Signup() {
   const navigate = useNavigate();
 
   const onSubmit = async (data) => {
+    console.log(data);
     try {
+      console.log(data);
       const res = await axios.post(
         "http://192.168.1.4:8000/users/signup",
         data
@@ -45,6 +47,7 @@ function Signup() {
           <input
             type="text"
             placeholder="Enter your Name"
+            {...register("name", { required: "Name is required" })}
             className="w-full p-3 mb-3 border border-gray-300 rounded-lg"
           />
           {errors.name && <p className="text-red-500">{errors.name.message}</p>}

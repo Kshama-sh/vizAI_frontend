@@ -13,15 +13,17 @@ function Login() {
   const navigate = useNavigate();
 
   const handleLogin = async (data) => {
+    console.log(data);
     try {
-      const res = await axios.post("http://192.168.1.4:8000", data);
+      const res = await axios.post("http://192.168.1.4:8000/users/login", data);
+      alert("Login successful!");
       if (res.data.success) {
         localStorage.setItem("login", res.data.success);
-        console.log("Logged in successfully");
+        console.log("Login successfully");
         navigate("/Console");
       }
     } catch (error) {
-      console.error("Login failed", error);
+      alert("Login failed! " + (error.response?.data?.message || "Try again."));
     }
   };
 
@@ -40,6 +42,10 @@ function Login() {
           <input
             type="email"
             placeholder="Enter your email"
+            {...register("email", {
+              required: "Email is required",
+              pattern: { value: /^\S+@\S+$/i, message: "Invalid email format" },
+            })}
             className="w-full p-3 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           {errors.email && (
@@ -54,6 +60,10 @@ function Login() {
           <input
             type="password"
             placeholder="Enter your password"
+            {...register("password", {
+              required: "Password is required",
+              minLength: { value: 6, message: "Must be at least 6 characters" },
+            })}
             className="w-full p-3 mb-3 border border-gray-300 rounded-lg"
           />
           {errors.password && (

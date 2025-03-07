@@ -7,6 +7,7 @@ import Query from "./pages/Query";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/static/Navbar";
 import Visualisation from "./pages/Visualisation";
+import Console from "./pages/Console";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/query" element={<Query />} />
         <Route path="/visualisation" element={<Visualisation />} />
+        <Route path="/console" element={<Console />} />
       </Routes>
     </Router>
   );
