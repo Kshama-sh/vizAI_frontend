@@ -16,11 +16,12 @@ function Login() {
     console.log(data);
     try {
       const res = await axios.post("http://192.168.1.4:8000/users/login", data);
+      console.log(res);
       alert("Login successful!");
+      navigate("/Console");
       if (res.data.success) {
-        localStorage.setItem("login", res.data.success);
-        console.log("Login successfully");
-        navigate("/Console");
+        localStorage.setItem("login", "true");
+        console.log("Login successful");
       }
     } catch (error) {
       alert("Login failed! " + (error.response?.data?.message || "Try again."));

@@ -47,7 +47,7 @@ const HeroSection = () => {
         </Card>
       </section>
       <img
-        src="https://media.licdn.com/dms/image/v2/D5612AQHcO2ZNHZ0BLQ/article-cover_image-shrink_720_1280/article-cover_image-shrink_720_1280/0/1718688243491?e=2147483647&v=beta&t=CZ90Z6cmPc9BxICWPdB9cDsmUHY527g4y6bJFTpSgVc"
+        src="https://img.freepik.com/premium-photo/colorful-data-visualization-with-charts-graphs_343170-15167.jpg"
         className="w-full max-w-5xl rounded-lg shadow-lg"
         alt="Dashboard Preview"
       />
