@@ -21,7 +21,7 @@ function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    setLoggedIn(localStorage.getItem("login") === "true");
+    setLoggedIn(localStorage.getItem("login") === true);
   }, []);
 
   const handleLogout = () => {
@@ -81,7 +81,7 @@ function Navbar() {
                 </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link to="/" className="hover:text-orange-500">
+                <Link to="/Console" className="hover:text-orange-500">
                   Console
                 </Link>
               </NavigationMenuItem>

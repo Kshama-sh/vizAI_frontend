@@ -15,7 +15,7 @@ function Console() {
         <Card>
           <CardHeader>
             <CardTitle className="font-bold text-xl">
-              Add Your Organisation
+              Select Your Organisation
             </CardTitle>
           </CardHeader>
           <CardContent>

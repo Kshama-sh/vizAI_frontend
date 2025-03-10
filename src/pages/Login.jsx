@@ -20,7 +20,7 @@ function Login() {
       alert("Login successful!");
       navigate("/Console");
       if (res.data.success) {
-        localStorage.setItem("login", "true");
+        localStorage.setItem("login", true);
         console.log("Login successful");
       }
     } catch (error) {
