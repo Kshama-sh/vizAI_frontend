@@ -15,13 +15,12 @@ import {
   NavigationMenuItem,
 } from "@/components/ui/navigation-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-
 function Navbar() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    setLoggedIn(localStorage.getItem("login") === true);
+    setLoggedIn(localStorage.getItem("login") === "true");
   }, []);
 
   const handleLogout = () => {
@@ -46,12 +45,26 @@ function Navbar() {
           </button>
         </SheetTrigger>
         <SheetContent className={""}>
-          <div className="flex flex-col p-7 gap-4 mt-5 ">
+          <div className="flex flex-col p-7 gap-4 mt-5">
             <Button className="bg-blue-950">
               <Link to="/Login">Login</Link>
             </Button>
             <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
               <Link to="/Signup">Signup</Link>
+            </Button>
+          </div>
+          <div className="flex flex-col p-7 gap-4 mt-5 ">
+            <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
+              <Link to="/Query">Query</Link>
+            </Button>
+            <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
+              <Link to="/Visualisation">Visualisation</Link>
+            </Button>
+            <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
+              <Link to="/Dashboard">Dashboard</Link>
+            </Button>
+            <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
+              <Link to="/Database">Console</Link>
             </Button>
           </div>
         </SheetContent>
@@ -71,17 +84,17 @@ function Navbar() {
                 </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link to="/" className="hover:text-orange-500">
+                <Link to="/Visualisation" className="hover:text-orange-500">
                   Visualisation
                 </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link to="/" className="hover:text-orange-500">
+                <Link to="/Dashboard" className="hover:text-orange-500">
                   Dashboard
                 </Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link to="/Console" className="hover:text-orange-500">
+                <Link to="/Database" className="hover:text-orange-500">
                   Console
                 </Link>
               </NavigationMenuItem>

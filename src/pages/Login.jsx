@@ -18,9 +18,9 @@ function Login() {
       const res = await axios.post("http://192.168.1.4:8000/users/login", data);
       console.log(res);
       alert("Login successful!");
-      navigate("/Console");
+      navigate("/Database");
       if (res.data.success) {
-        localStorage.setItem("login", true);
+        localStorage.setItem("login", "true");
         console.log("Login successful");
       }
     } catch (error) {

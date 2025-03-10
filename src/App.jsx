@@ -8,6 +8,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/static/Navbar";
 import Visualisation from "./pages/Visualisation";
 import Console from "./pages/Console";
+import Dashboard from "./pages/Dashboard";
+import Database from "./pages/Database";
 
 function App() {
   return (
@@ -20,6 +22,9 @@ function App() {
         <Route path="/query" element={<Query />} />
         <Route path="/visualisation" element={<Visualisation />} />
         <Route path="/console" element={<Console />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/visualisation" element={<Visualisation />} />
+        <Route path="/database" element={<Database />} />
       </Routes>
     </Router>
   );
