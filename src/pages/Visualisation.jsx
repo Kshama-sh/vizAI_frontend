@@ -148,7 +148,7 @@ function Visualisation() {
       )}
 
       {/* Saved Visualizations */}
-      {savedVisualizations.length > 0 && (
+      {/* {savedVisualizations.length > 0 && (
         <div>
           <h2 className="text-xl font-bold mt-6">Saved Visualizations</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -170,7 +170,7 @@ function Visualisation() {
             ))}
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

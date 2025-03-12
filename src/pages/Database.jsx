@@ -1,128 +1,5 @@
-// import React from "react";
-// import { useState } from "react";
-// import { Card } from "@/components/ui/card";
-// import { Button } from "@/components/ui/button";
-// import { Label } from "@/components/ui/label";
-// import { Input } from "@/components/ui/input";
-// import {
-//   Select,
-//   SelectItem,
-//   SelectContent,
-//   SelectTrigger,
-//   SelectValue,
-// } from "@/components/ui/select";
-
-// function Database() {
-//   const [step, setStep] = useState(1);
-
-//   const handleDbSubmit = (e) => {
-//     e.preventDefault();
-//     console.log("DB Details:", dbDetails);
-//     setTimeout(() => {
-//       alert("Database verified successfully!");
-//       setStep(2);
-//     }, 1000);
-//   };
-//   return (
-//     <div>
-//       <Card className="w-full max-w-md bg-white p-6 rounded-lg shadow-md m-auto mt-20">
-//         <h2 className="text-xl font-semibold text-center text-gray-900 mb-4">
-//           {step === 1 ? "Connect Your Database" : "Setup Domain & Role"}
-//         </h2>
-//         {step == 1 ? (
-//           <form onSubmit={handleDbSubmit} className="mt-6 w-full max-w-sm">
-//             <Label className="flex text-gray-700 font-medium flex-start">
-//               Database Type
-//             </Label>
-//             <Select>
-//               <SelectTrigger className="w-full p-3 mb-3 border border-gray-300 rounded-lg">
-//                 <SelectValue placeholder="Select database type" />
-//               </SelectTrigger>
-//               <SelectContent>
-//                 <SelectItem value="mysql">MySQL</SelectItem>
-//                 <SelectItem value="postgres">Postgres</SelectItem>
-//                 <SelectItem value="sqlite">SQLite</SelectItem>
-//               </SelectContent>
-//             </Select>
-//             <Label className="flex text-gray-700 font-medium flex-start">
-//               Name
-//             </Label>
-//             <Input
-//               type="text"
-//               placeholder="Enter database Name"
-//               className="w-full p-3 mb-3 border border-gray-300 rounded-lg"
-//             />
-//             <Label className="flex text-gray-700 font-medium flex-start">
-//               Host
-//             </Label>
-//             <Input
-//               type="text"
-//               placeholder="Enter Host"
-//               className="w-full p-3 mb-3 border border-gray-300 rounded-lg"
-//             />
-//             <Label className="flex text-gray-700 font-medium flex-start">
-//               Port
-//             </Label>
-//             <Input
-//               type="text"
-//               placeholder="Enter Port number"
-//               className="w-full p-3 mb-3 border border-gray-300 rounded-lg"
-//             />
-//             <Label className="flex text-gray-700 font-medium flex-start">
-//               User
-//             </Label>
-//             <Input
-//               type="text"
-//               placeholder="Enter your Username"
-//               className="w-full p-3 mb-3 border border-gray-300 rounded-lg"
-//             />
-//             <Label className="flex text-gray-700 font-medium flex-start">
-//               Password
-//             </Label>
-//             <Input
-//               type="password"
-//               placeholder="Enter your Password"
-//               className="w-full p-3 mb-3 border border-gray-300 rounded-lg"
-//             />
-//             <Button
-//               type="submit"
-//               className="w-full bg-blue-950 text-white py-3 rounded-lg transition"
-//             >
-//               Verify Database
-//             </Button>
-//           </form>
-//         ) : (
-//           <form className="mt-6 w-full max-w-sm">
-//             <Label className="flex text-gray-700 font-medium flex-start">
-//               Domain
-//             </Label>
-//             <Input
-//               type="text"
-//               placeholder="Enter your domain"
-//               className="w-full p-3 mb-3 border border-gray-300 rounded-lg"
-//             />
-//             <Label className="flex text-gray-700 font-medium flex-start">
-//               User Role
-//             </Label>
-//             <Input
-//               type="text"
-//               placeholder="Enter your role"
-//               className="w-full p-3 mb-3 border border-gray-300 rounded-lg"
-//             />
-//             <Button
-//               type="submit"
-//               className="w-full bg-blue-950 text-white py-3 rounded-lg transition"
-//             >
-//               Submit
-//             </Button>
-//           </form>
-//         )}
-//       </Card>
-//     </div>
-//   );
-// }
-// export default Database;
 import React, { useState } from "react";
+import axios from "axios";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -134,9 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function Database() {
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("url");
   const [formData, setFormData] = useState({
     dbType: "",
     dbName: "",
@@ -144,36 +25,91 @@ function Database() {
     port: "",
     user: "",
     password: "",
+    uri: "",
     domain: "",
     userRole: "",
   });
 
-  // Update form fields dynamically
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle database type separately for Select component
   const handleDbTypeChange = (value) => {
     setFormData({ ...formData, dbType: value });
   };
 
-  // Mock Database Verification
-  const handleDbSubmit = (e) => {
-    e.preventDefault();
-    console.log("Database Details:", formData);
-
-    setTimeout(() => {
-      alert("Database verified successfully!");
-      setStep(2);
-    }, 1000);
+  const handleRoleChange = (value) => {
+    setFormData({ ...formData, userRole: value });
   };
 
-  // Handle Final Submission
-  const handleFinalSubmit = (e) => {
+  const handleDbSubmit = async (e) => {
     e.preventDefault();
-    console.log("Final Submission:", formData);
-    alert("Setup Completed!");
+    setLoading(true);
+    setError("");
+
+    const payload =
+      activeTab === "url"
+        ? {
+            dbType: formData.dbType,
+            dbName: formData.dbName,
+            host: formData.host,
+            port: formData.port,
+            user: formData.user,
+            password: formData.password,
+          }
+        : {
+            dbType: formData.dbType,
+            dbName: formData.dbName,
+            connection_string: formData.connection_string,
+          };
+
+    try {
+      const response = await axios.post(
+        /////////
+        "http://",
+        payload
+      );
+
+      if (response.data.success) {
+        alert("Database verified successfully!");
+        setStep(2);
+      } else {
+        setError("Database verification failed. Please check your details.");
+      }
+    } catch (error) {
+      setError("Error connecting to the database. Please try again.");
+      console.error("Database verification error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFinalSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await axios.post(
+        /////////
+        "http://",
+        {
+          domain: formData.domain,
+          userRole: formData.userRole,
+        }
+      );
+
+      if (response.data.success) {
+        alert("Setup Completed!");
+      } else {
+        setError("Setup failed. Please try again.");
+      }
+    } catch (error) {
+      setError("Error in final setup. Please try again.");
+      console.error("Final submission error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -183,85 +119,132 @@ function Database() {
           {step === 1 ? "Connect Your Database" : "Setup Domain & Role"}
         </h2>
 
+        {error && <p className="text-red-500 text-center">{error}</p>}
+
         {step === 1 ? (
           <form onSubmit={handleDbSubmit} className="space-y-4">
-            <div>
-              <Label>Database Type</Label>
-              <Select onValueChange={handleDbTypeChange}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select database type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="mysql">MySQL</SelectItem>
-                  <SelectItem value="postgres">Postgres</SelectItem>
-                  <SelectItem value="sqlite">SQLite</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Name</Label>
-              <Input
-                name="dbName"
-                type="text"
-                value={formData.dbName}
-                onChange={handleChange}
-                placeholder="Enter database name"
-              />
-            </div>
-
-            <div>
-              <Label>Host</Label>
-              <Input
-                name="host"
-                type="text"
-                value={formData.host}
-                onChange={handleChange}
-                placeholder="Enter host"
-              />
-            </div>
-
-            <div>
-              <Label>Port</Label>
-              <Input
-                name="port"
-                type="text"
-                value={formData.port}
-                onChange={handleChange}
-                placeholder="Enter port number"
-              />
-            </div>
-
-            <div>
-              <Label>User</Label>
-              <Input
-                name="user"
-                type="text"
-                value={formData.user}
-                onChange={handleChange}
-                placeholder="Enter username"
-              />
-            </div>
-
-            <div>
-              <Label>Password</Label>
-              <Input
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Enter password"
-              />
-            </div>
-
-            <Button type="submit" className="w-full bg-blue-950">
-              Verify Database
+            <Tabs
+              defaultValue="url"
+              className="w-[400px]"
+              onValueChange={setActiveTab}
+            >
+              <TabsList>
+                <TabsTrigger value="url">URL</TabsTrigger>
+                <TabsTrigger value="uri">URI</TabsTrigger>
+              </TabsList>
+              <TabsContent value="url" className="space-y-2">
+                <div>
+                  <Label className="mb-1">Database Type</Label>
+                  <Select onValueChange={handleDbTypeChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select database type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mysql">MySQL</SelectItem>
+                      <SelectItem value="postgres">Postgres</SelectItem>
+                      <SelectItem value="sqlite">SQLite</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="mb-1">Name</Label>
+                  <Input
+                    name="dbName"
+                    type="text"
+                    value={formData.dbName}
+                    onChange={handleChange}
+                    placeholder="Enter database name"
+                  />
+                </div>
+                <div>
+                  <Label className="mb-1">Host</Label>
+                  <Input
+                    name="host"
+                    type="text"
+                    value={formData.host}
+                    onChange={handleChange}
+                    placeholder="Enter host"
+                  />
+                </div>
+                <div>
+                  <Label className="mb-1">Port</Label>
+                  <Input
+                    name="port"
+                    type="text"
+                    value={formData.port}
+                    onChange={handleChange}
+                    placeholder="Enter port number"
+                  />
+                </div>
+                <div>
+                  <Label className="mb-1">User</Label>
+                  <Input
+                    name="user"
+                    type="text"
+                    value={formData.user}
+                    onChange={handleChange}
+                    placeholder="Enter username"
+                  />
+                </div>
+                <div>
+                  <Label className="mb-1">Password</Label>
+                  <Input
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Enter password"
+                  />
+                </div>
+              </TabsContent>
+              <TabsContent value="uri" className="space-y-2">
+                <div>
+                  <Label className="mb-1">Database Type</Label>
+                  <Select onValueChange={handleDbTypeChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select database type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mysql">MySQL</SelectItem>
+                      <SelectItem value="postgres">Postgres</SelectItem>
+                      <SelectItem value="sqlite">SQLite</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="mb-1">Name</Label>
+                  <Input
+                    name="dbName"
+                    type="text"
+                    value={formData.dbName}
+                    onChange={handleChange}
+                    placeholder="Enter database name"
+                  />
+                </div>
+                <div>
+                  <Label className="mb-1">Connection String</Label>
+                  <Input
+                    name="connection_string"
+                    type="text"
+                    value={formData.uri}
+                    onChange={handleChange}
+                    placeholder="Enter your Connection String"
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+            <Button
+              type="submit"
+              className="w-full bg-blue-950"
+              disabled={loading}
+            >
+              {loading ? "Verifying..." : "Verify Database"}
             </Button>
           </form>
         ) : (
           <form onSubmit={handleFinalSubmit} className="space-y-4">
             <div>
-              <Label>Domain</Label>
+              <Label className="mb-1">Domain</Label>
               <Input
                 name="domain"
                 type="text"
@@ -270,21 +253,6 @@ function Database() {
                 placeholder="Enter your domain"
               />
             </div>
-
-            <div>
-              <Label>User Role</Label>
-              <Input
-                name="userrole"
-                type="text"
-                value={formData.userRole}
-                onChange={handleChange}
-                placeholder="Enter your role"
-              />
-            </div>
-
-            <Button type="submit" className="w-full bg-green-600">
-              Submit
-            </Button>
           </form>
         )}
       </Card>

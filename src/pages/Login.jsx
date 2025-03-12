@@ -13,10 +13,8 @@ function Login() {
   const navigate = useNavigate();
 
   const handleLogin = async (data) => {
-    console.log(data);
     try {
       const res = await axios.post("http://192.168.1.4:8000/users/login", data);
-      console.log(res);
       alert("Login successful!");
       navigate("/Database");
       if (res.data.success) {
