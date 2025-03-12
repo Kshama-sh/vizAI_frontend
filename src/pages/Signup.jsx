@@ -13,9 +13,7 @@ function Signup() {
   const navigate = useNavigate();
 
   const onSubmit = async (data) => {
-    console.log(data);
     try {
-      console.log(data);
       const res = await axios.post(
         "http://192.168.1.4:8000/users/signup",
         data
