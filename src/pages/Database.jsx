@@ -253,6 +253,19 @@ function Database() {
                 placeholder="Enter your domain"
               />
             </div>
+            <div>
+              <Label className="mb-1">User Role</Label>
+              <Select onValueChange={handleDbTypeChange}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select your Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="finance">Finance</SelectItem>
+                  <SelectItem value="product">Product</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </form>
         )}
       </Card>
