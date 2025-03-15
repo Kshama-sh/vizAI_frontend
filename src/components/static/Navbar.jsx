@@ -75,28 +75,20 @@ function Navbar() {
           menuOpen ? "block" : "hidden"
         } absolute top-16 right-0 w-full lg:static lg:w-auto`}
       >
-        <NavigationMenuList className="flex gap-6">
+        <NavigationMenuList className="flex gap-6 text-black font-bold">
           {loggedIn ? (
             <>
               <NavigationMenuItem>
-                <Link to="/Query" className="hover:text-orange-500">
-                  Query
-                </Link>
+                <Link to="/Query">Query</Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link to="/Visualisation" className="hover:text-orange-500">
-                  Visualisation
-                </Link>
+                <Link to="/Visualisation">Visualisation</Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link to="/Dashboard" className="hover:text-orange-500">
-                  Dashboard
-                </Link>
+                <Link to="/Dashboard">Dashboard</Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link to="/Database" className="hover:text-orange-500">
-                  Console
-                </Link>
+                <Link to="/Database">Console</Link>
               </NavigationMenuItem>
 
               <NavigationMenuItem>

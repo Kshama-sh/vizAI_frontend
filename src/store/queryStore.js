@@ -148,10 +148,20 @@ const dummyQueries = [
   },
 ];
 
-const useQueryStore = create((set) => ({
+const useQueryStore = create((set, get) => ({
+  queries: dummyQueries,
   selectedQuery: null,
   setSelectedQuery: (query) => set({ selectedQuery: query }),
-  queries: dummyQueries,
+  queryResult: null,
+  executeQuery: (queryId) => {
+    const queries = get().queries;
+    const query = queries.find((q) => q.id === queryId);
+    if (query) {
+      set({ queryResult: query });
+    } else {
+      console.error("Query not found:", queryId);
+    }
+  },
 }));
 
 export default useQueryStore;

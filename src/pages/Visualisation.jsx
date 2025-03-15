@@ -22,7 +22,7 @@ const Visualisation = () => {
 
   return (
     <div className="grid md:grid-cols-2 gap-6 p-6">
-      <Card className="p-5 shadow-lg rounded-2xl bg-amber-100 dark:bg-gray-900">
+      <Card className="p-5 shadow-lg rounded-2xl dark:bg-gray-900">
         <CardHeader>
           <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
             {selectedQuery.title}
@@ -40,7 +40,7 @@ const Visualisation = () => {
           </Button>
         </CardFooter>
       </Card>
-      <Card className="p-5 shadow-lg rounded-2xl bg-amber-100">
+      <Card className="p-5 shadow-lg rounded-2xl">
         <CardHeader>
           <h3 className="text-lg font-semibold text-gray-800">
             Visualisation Summary

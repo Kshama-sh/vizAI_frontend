@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -12,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { apiRequest } from "@/api/access_token";
 
 function Database() {
   const [step, setStep] = useState(1);
@@ -25,9 +25,10 @@ function Database() {
     port: "",
     user: "",
     password: "",
-    uri: "",
+    connection_string: "",
     domain: "",
     userRole: "",
+    apikey: "",
   });
 
   const handleChange = (e) => {
@@ -58,27 +59,31 @@ function Database() {
             password: formData.password,
           }
         : {
-            dbType: formData.dbType,
-            dbName: formData.dbName,
+            db_type: formData.dbType,
+            // dbName: formData.dbName,
             connection_string: formData.connection_string,
+            project_id: 1,
+            api_key: "",
+            domain: "Metro service",
+            // project_id: 1,
+            // connection_string:
+            //   "mysql+pymysql://root:password@localhost:3306/classicmodels",
+            // domain: "Metro service",
+            // db_type: "postgres",
+            // api_key: "",
           };
 
     try {
-      const response = await axios.post(
-        /////////
-        "http://",
+      const data = await apiRequest(
+        "POST",
+        "http://192.168.1.20:8000/external-db",
         payload
       );
-
-      if (response.data.success) {
-        alert("Database verified successfully!");
-        setStep(2);
-      } else {
-        setError("Database verification failed. Please check your details.");
-      }
+      console.log("Database connected successfully:", data);
+      alert("Database verified successfully!");
+      setStep(2);
     } catch (error) {
-      setError("Error connecting to the database. Please try again.");
-      console.error("Database verification error:", error);
+      setError("Database verification failed. Please check your details.");
     } finally {
       setLoading(false);
     }
@@ -90,23 +95,21 @@ function Database() {
     setError("");
 
     try {
-      const response = await axios.post(
-        /////////
-        "http://",
+      const data = await apiRequest(
+        "PATCH",
+        "http://192.168.1.20:8000/external-db",
         {
           domain: formData.domain,
-          userRole: formData.userRole,
+          // userRole: formData.userRole,
+          // apikey: formData.apikey,
+          db_entry_id: 1,
         }
       );
 
-      if (response.data.success) {
-        alert("Setup Completed!");
-      } else {
-        setError("Setup failed. Please try again.");
-      }
+      alert("Setup Completed!");
+      console.log("Setup success:", data);
     } catch (error) {
-      setError("Error in final setup. Please try again.");
-      console.error("Final submission error:", error);
+      setError("Setup failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -125,16 +128,16 @@ function Database() {
           <form onSubmit={handleDbSubmit} className="space-y-4">
             <Tabs
               defaultValue="url"
-              className="w-[400px]"
+              className="w-full"
               onValueChange={setActiveTab}
             >
               <TabsList>
-                <TabsTrigger value="url">URL</TabsTrigger>
-                <TabsTrigger value="uri">URI</TabsTrigger>
+                <TabsTrigger value="url">HOST</TabsTrigger>
+                <TabsTrigger value="uri">URL</TabsTrigger>
               </TabsList>
               <TabsContent value="url" className="space-y-2">
                 <div>
-                  <Label className="mb-1">Database Type</Label>
+                  <Label>Database Type</Label>
                   <Select onValueChange={handleDbTypeChange}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select database type" />
@@ -147,7 +150,7 @@ function Database() {
                   </Select>
                 </div>
                 <div>
-                  <Label className="mb-1">Name</Label>
+                  <Label>Name</Label>
                   <Input
                     name="dbName"
                     type="text"
@@ -157,7 +160,7 @@ function Database() {
                   />
                 </div>
                 <div>
-                  <Label className="mb-1">Host</Label>
+                  <Label>Host</Label>
                   <Input
                     name="host"
                     type="text"
@@ -167,7 +170,7 @@ function Database() {
                   />
                 </div>
                 <div>
-                  <Label className="mb-1">Port</Label>
+                  <Label>Port</Label>
                   <Input
                     name="port"
                     type="text"
@@ -177,7 +180,7 @@ function Database() {
                   />
                 </div>
                 <div>
-                  <Label className="mb-1">User</Label>
+                  <Label>User</Label>
                   <Input
                     name="user"
                     type="text"
@@ -187,7 +190,7 @@ function Database() {
                   />
                 </div>
                 <div>
-                  <Label className="mb-1">Password</Label>
+                  <Label>Password</Label>
                   <Input
                     name="password"
                     type="password"
@@ -199,7 +202,7 @@ function Database() {
               </TabsContent>
               <TabsContent value="uri" className="space-y-2">
                 <div>
-                  <Label className="mb-1">Database Type</Label>
+                  <Label>Database Type</Label>
                   <Select onValueChange={handleDbTypeChange}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select database type" />
@@ -212,7 +215,7 @@ function Database() {
                   </Select>
                 </div>
                 <div>
-                  <Label className="mb-1">Name</Label>
+                  <Label>Name</Label>
                   <Input
                     name="dbName"
                     type="text"
@@ -222,11 +225,11 @@ function Database() {
                   />
                 </div>
                 <div>
-                  <Label className="mb-1">Connection String</Label>
+                  <Label>Connection String</Label>
                   <Input
                     name="connection_string"
                     type="text"
-                    value={formData.uri}
+                    value={formData.connection_string}
                     onChange={handleChange}
                     placeholder="Enter your Connection String"
                   />
@@ -244,7 +247,7 @@ function Database() {
         ) : (
           <form onSubmit={handleFinalSubmit} className="space-y-4">
             <div>
-              <Label className="mb-1">Domain</Label>
+              <Label>Domain</Label>
               <Input
                 name="domain"
                 type="text"
@@ -254,8 +257,8 @@ function Database() {
               />
             </div>
             <div>
-              <Label className="mb-1">User Role</Label>
-              <Select onValueChange={handleDbTypeChange}>
+              <Label>User Role</Label>
+              <Select onValueChange={handleRoleChange}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select your Role" />
                 </SelectTrigger>
@@ -266,6 +269,27 @@ function Database() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label className="mb-1 text-lg font-semibold">API Key</Label>
+              <p className="text-sm text-gray-500">
+                Wish to use your own API key? Go ahead, be the boss!
+              </p>
+              <Input
+                name="apikey"
+                type="text"
+                value={formData.apikey}
+                onChange={handleChange}
+                placeholder="Enter your secret 🔑"
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:border-purple-500 focus:ring-purple-500"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-blue-950"
+              disabled={loading}
+            >
+              {loading ? "Setting up..." : "Complete Setup"}
+            </Button>
           </form>
         )}
       </Card>
