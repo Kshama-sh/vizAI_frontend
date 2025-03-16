@@ -23,7 +23,7 @@ const HeroSection = () => {
       </section>
       <div className="flex gap-6">
         <Link to="/Signup">
-          <Button className="text-white px-6 py-3 text-lg sm:text-xl rounded-lg">
+          <Button className="text-white bg-pink-900 px-6 py-3 text-lg sm:text-xl rounded-lg">
             Get Started
           </Button>
         </Link>

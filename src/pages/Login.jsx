@@ -14,11 +14,16 @@ function Login() {
 
   const handleLogin = async (data) => {
     try {
-      const res = await axios.post("http://192.168.1.4:8000/users/login", data);
+      const res = await axios.post(
+        "http://192.168.1.21:8000/users/login",
+        data
+      );
       alert("Login successful!");
       navigate("/Database");
-      if (res.data.success) {
+      console.log(res);
+      if (res.status === 200) {
         localStorage.setItem("login", "true");
+        localStorage.setItem("accessToken", res.data.access_token);
         console.log("Login successful");
       }
     } catch (error) {
