@@ -10,7 +10,6 @@ import Visualisation from "./pages/Visualisation";
 import Console from "./pages/Console";
 import Dashboard from "./pages/Dashboard";
 import Database from "./pages/Database";
-import QueryVisualiser from "./pages/QueryVisualiser";
 function App() {
   return (
     <Router>
@@ -25,7 +24,6 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/visualisation" element={<Visualisation />} />
         <Route path="/database" element={<Database />} />
-        <Route path="/queryvisualiser" element={<QueryVisualiser />} />
       </Routes>
     </Router>
   );
