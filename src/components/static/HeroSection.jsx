@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 
 const HeroSection = () => {
   return (
-    <main className="bg-[#F6F2FF] flex flex-col gap-10 sm:gap-20 py-10 sm:py-20 items-center text-center w-full ">
+    <main className="bg-white flex flex-col gap-10 sm:gap-20 py-10 sm:py-20 items-center text-center w-full ">
       <section className="bg-opacity-50">
         <h1 className="font-extrabold text-4xl sm:text-6xl lg:text-7xl tracking-tighter py-4">
           AI-Powered Dashboard Insights
@@ -16,13 +16,13 @@ const HeroSection = () => {
       </section>
       <div className="flex gap-6 bg-opacity-50">
         <Link to="/Signup">
-          <Button className="text-white bg-pink-900 px-6 py-3 text-lg sm:text-xl rounded-lg">
+          <Button className="text-white bg-[#230C33] hover:bg-[#C4BEEE] px-6 py-3 text-lg sm:text-xl rounded-lg">
             Get Started
           </Button>
         </Link>
       </div>
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
-        <Card>
+        <Card className="bg-[#B4ADEA]">
           <CardHeader>
             <CardTitle className="font-bold text-xl">For Analysts</CardTitle>
           </CardHeader>
@@ -30,7 +30,7 @@ const HeroSection = () => {
             Generate insightful reports and dashboards in seconds.
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-[#B4ADEA] ">
           <CardHeader>
             <CardTitle className="font-bold text-xl">For Businesses</CardTitle>
           </CardHeader>
@@ -54,7 +54,7 @@ const HeroSection = () => {
           </h1>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl mx-auto p-4">
-          <Card className="shadow-lg hover:shadow-xl transition-shadow rounded-2xl bg-black">
+          <Card className="shadow-lg hover:shadow-xl transition-shadow rounded-2xl bg-[#230C33]">
             <CardContent className="flex items-center justify-center h-36">
               <img
                 src="src/assets/mysql_logo.svg"
@@ -64,7 +64,7 @@ const HeroSection = () => {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg hover:shadow-xl transition-shadow rounded-2xl bg-black">
+          <Card className="shadow-lg hover:shadow-xl transition-shadow rounded-2xl bg-[#230C33]">
             <CardContent className="flex items-center justify-center h-36">
               <img
                 src="src/assets/postgresql-logo.png"
@@ -74,7 +74,7 @@ const HeroSection = () => {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg hover:shadow-xl transition-shadow rounded-2xl">
+          <Card className="shadow-lg hover:shadow-xl transition-shadow rounded-2xl bg-[#230C33]">
             <CardContent className="flex items-center justify-center h-36">
               <img
                 src="src/assets/sqlite-logo.png"

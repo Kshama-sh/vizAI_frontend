@@ -42,7 +42,7 @@ function Navbar() {
   };
 
   return (
-    <nav className="bg-[#420039] text-gray-900 px-4 py-3 shadow-md flex justify-between items-center">
+    <nav className="bg-[#230C33] text-[#B4ADEA] px-4 py-3 shadow-md flex justify-between items-center">
       <Link to="/" className="text-2xl font-bold">
         <img
           src={logo}
@@ -58,31 +58,34 @@ function Navbar() {
           </button>
         </SheetTrigger>
         <SheetContent>
-          <div className="flex flex-col p-7 gap-4 mt-5">
+          <div className="flex flex-col p-7 gap-4 mt-5 ">
             {loggedIn ? (
               <>
-                <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
+                <Button className="border-none text-gray-800 bg-gray-50 hover:bg-gray-200 px-4 py-2 rounded-md shadow-md">
                   <Link to="/Query">Query</Link>
                 </Button>
-                <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
+                {/* <Button>
                   <Link to="/Visualisation">Visualisation</Link>
-                </Button>
-                <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
+                </Button> */}
+                <Button className="border-none text-gray-800 bg-gray-50 hover:bg-gray-200 px-4 py-2 rounded-md shadow-md">
                   <Link to="/Dashboard">Dashboard</Link>
                 </Button>
-                <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
+                <Button className="border-none text-gray-800 bg-gray-50 hover:bg-gray-200 px-4 py-2 rounded-md shadow-md">
                   <Link to="/Database">Console</Link>
                 </Button>
-                <Button onClick={handleLogout} className="bg-red-500">
+                <Button
+                  onClick={handleLogout}
+                  className="bg-red-700 text-white px-4 py-2 rounded-md shadow-md hover:bg-red-900"
+                >
                   Logout
                 </Button>
               </>
             ) : (
               <>
-                <Button className="bg-blue-950">
+                <Button className="border-none text-gray-800 bg-gray-50 hover:bg-gray-200 px-4 py-2 rounded-md shadow-md">
                   <Link to="/Login">Login</Link>
                 </Button>
-                <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
+                <Button className="border-none text-gray-800 bg-gray-50 hover:bg-gray-200 px-4 py-2 rounded-md shadow-md">
                   <Link to="/Signup">Signup</Link>
                 </Button>
               </>
@@ -98,14 +101,14 @@ function Navbar() {
               <NavigationMenuItem>
                 <Link to="/Query">Query</Link>
               </NavigationMenuItem>
-              <NavigationMenuItem>
+              {/* <NavigationMenuItem>
                 <Link to="/Visualisation">Visualisation</Link>
-              </NavigationMenuItem>
+              </NavigationMenuItem> */}
               <NavigationMenuItem>
                 <Link to="/Dashboard">Dashboard</Link>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link to="/Database">Console</Link>
+                <Link to="/Database">Connect</Link>
               </NavigationMenuItem>
 
               <NavigationMenuItem>
@@ -136,10 +139,10 @@ function Navbar() {
             </>
           ) : (
             <div className="flex gap-4">
-              <Button className="bg-gradient-to-r from-pink-700 to-purple-700">
+              <Button className="bg-[#998DE2] hover:bg-[#C4BEEE]">
                 <Link to="/Login">Login</Link>
               </Button>
-              <Button className="bg-gradient-to-r from-pink-700 to-purple-700">
+              <Button className="bg-[#998DE2] hover:bg-[#C4BEEE]">
                 <Link to="/Signup">Signup</Link>
               </Button>
             </div>

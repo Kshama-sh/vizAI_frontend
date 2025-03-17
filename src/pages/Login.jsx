@@ -77,7 +77,7 @@ function Login() {
 
         <Button
           type="submit"
-          className="w-full bg-blue-950 text-white py-3 rounded-lg transition"
+          className="w-full bg-[#230C33] text-white py-3 rounded-lg transition"
         >
           Login
         </Button>

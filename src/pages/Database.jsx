@@ -13,6 +13,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/api/access_token";
 import { useNavigate } from "react-router-dom";
+import useQueryStore from "@/store/queryStore";
 
 function Database() {
   const [step, setStep] = useState(1);
@@ -20,7 +21,7 @@ function Database() {
   const [error, setError] = useState("");
   const [dbEntryId, setDbEntryId] = useState(null);
   const [activeTab, setActiveTab] = useState("host");
-  const backendUrl = import.meta.env.BACKEND_URL;
+  const { fetchQueryTitles } = useQueryStore();
   const [formData, setFormData] = useState({
     dbType: "",
     dbName: "",
@@ -47,6 +48,7 @@ function Database() {
   };
 
   const navigate = useNavigate();
+
   const handleDbSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -56,7 +58,6 @@ function Database() {
       activeTab === "host"
         ? {
             db_type: formData.dbType.toLowerCase(),
-
             host: formData.host,
             port: formData.port,
             user: formData.user,
@@ -108,21 +109,22 @@ function Database() {
     }
 
     try {
-      const data = await apiRequest(
-        "PATCH",
-        "http://192.168.94.112:8000/external-db",
-        {
-          domain: formData.domain,
-          project_id: 1,
-          apikey: formData.apikey,
-          db_entry_id: dbEntryId,
-        }
+      await apiRequest("PATCH", "http://192.168.94.112:8000/external-db", {
+        domain: formData.domain,
+        project_id: 1,
+        apikey: formData.apikey,
+        db_entry_id: dbEntryId,
+      });
+      console.log(
+        "Setup completed, fetching queries for dbEntryId:",
+        dbEntryId
       );
-
+      await fetchQueryTitles(dbEntryId);
+      localStorage.setItem("current-db-entry-id", dbEntryId);
       alert("Setup Completed!");
-      console.log("Setup success:", data);
       navigate("/Query");
     } catch (error) {
+      console.error("Setup failed:", error);
       setError("Setup failed. Please try again.");
     } finally {
       setLoading(false);
@@ -163,16 +165,6 @@ function Database() {
                     </SelectContent>
                   </Select>
                 </div>
-                {/* <div>
-                  <Label>Name</Label>
-                  <Input
-                    name="dbName"
-                    type="text"
-                    value={formData.dbName}
-                    onChange={handleChange}
-                    placeholder="Enter database name"
-                  />
-                </div> */}
                 <div>
                   <Label>Host</Label>
                   <Input
@@ -241,16 +233,6 @@ function Database() {
                     </SelectContent>
                   </Select>
                 </div>
-                {/* <div>
-                  <Label>Name</Label>
-                  <Input
-                    name="dbName"
-                    type="text"
-                    value={formData.dbName}
-                    onChange={handleChange}
-                    placeholder="Enter database name"
-                  />
-                </div> */}
                 <div>
                   <Label>Connection String</Label>
                   <Input
@@ -296,19 +278,6 @@ function Database() {
                 placeholder="Enter your domain"
               />
             </div>
-            {/* <div>
-              <Label>User Role</Label>
-              <Select onValueChange={handleRoleChange}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select your Role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="finance">Finance</SelectItem>
-                  <SelectItem value="product">Product</SelectItem>
-                </SelectContent>
-              </Select>
-            </div> */}
             <div className="space-y-2">
               <Label className="mb-1 text-lg font-semibold">API Key</Label>
               <p className="text-sm text-gray-500">
