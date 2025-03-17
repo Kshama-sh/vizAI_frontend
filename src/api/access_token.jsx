@@ -1,6 +1,20 @@
 import axios from "axios";
 
-const getAccessToken = () => localStorage.getItem("accessToken");
+const getAccessToken = () => {
+  try {
+    const token = localStorage.getItem("accessToken");
+    console.log(localStorage.getItem("accessToken"));
+
+    if (!token) {
+      console.error("Access Token is missing!");
+      return null;
+    }
+    return token;
+  } catch (error) {
+    console.error("Error accessing localStorage:", error);
+    return null;
+  }
+};
 
 export const apiRequest = async (
   method,
@@ -10,14 +24,18 @@ export const apiRequest = async (
 ) => {
   try {
     const accessToken = getAccessToken();
+    if (!accessToken) {
+      throw new Error("Unauthorized: No access token found");
+    }
 
-    const headers = accessToken
-      ? { Authorization: `Bearer ${accessToken}` }
-      : {};
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`, // Ensure correct header
+    };
 
     const response = await axios({
       method,
-      url: endpoint, // Fix: Use endpoint instead of url
+      url: endpoint,
       data,
       params,
       headers,
@@ -25,7 +43,10 @@ export const apiRequest = async (
 
     return response.data;
   } catch (error) {
-    console.error("API Request Error:", error.response?.data || error.message);
-    throw error.response?.data || error.message;
+    console.error(
+      "API Request Error:",
+      error.response?.data?.detail || error.response?.data || error.message
+    );
+    throw error.response?.data || { message: error.message };
   }
 };

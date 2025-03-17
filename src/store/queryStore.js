@@ -1,5 +1,5 @@
 import { create } from "zustand";
-
+import { persist } from "zustand/middleware";
 const dummyQueries = [
   {
     id: 1,
@@ -147,21 +147,96 @@ const dummyQueries = [
       "This scatter plot shows the correlation between a job's minimum salary requirement and the average salary. Higher minimum salary jobs tend to have proportionally higher average salaries, suggesting a direct relationship.",
   },
 ];
+const backendUrl = import.meta.env.BACKEND_URL;
+const useQueryStore = create(
+  persist(
+    (set, get) => ({
+      queries: dummyQueries,
+      //queries:[],
+      selectedQuery: null,
+      queryResult: null,
+      dashboardQueries: [],
 
-const useQueryStore = create((set, get) => ({
-  queries: dummyQueries,
-  selectedQuery: null,
-  setSelectedQuery: (query) => set({ selectedQuery: query }),
-  queryResult: null,
-  executeQuery: (queryId) => {
-    const queries = get().queries;
-    const query = queries.find((q) => q.id === queryId);
-    if (query) {
-      set({ queryResult: query });
-    } else {
-      console.error("Query not found:", queryId);
+      //Fetch query titles from backend
+      // fetchQueryTitles: async () => {
+      //   try {
+      //     const response = await apiRequest(
+      //       "GET",
+      //       `${backendUrl}/users/signup`
+      //     );
+      //     if (!response || !response.data)
+      //       throw new Error("Invalid API response");
+      //     set({ queries: response.data.queries || response.data });
+      //   } catch (error) {
+      //     console.error("Error fetching query titles:", error);
+      //   }
+      // },
+
+      //Fetch query results when preview is clicked
+      // executeQuery: async (queryId) => {
+      //   try {
+      //     const response = await apiRequest(
+      //       "GET",
+      //       `${backendUrl}/users/signup`
+      //     );
+      //     set({ queryResult: response.data });
+      //   } catch (error) {
+      //     console.error("Error fetching query result:", error);
+      //   }
+      // },
+
+      executeQuery: (queryId) => {
+        const queries = get().queries;
+        const query = queries.find((q) => q.id === queryId);
+        if (query) {
+          set({ queryResult: query });
+        } else {
+          console.error("Query not found:", queryId);
+        }
+      },
+
+      setSelectedQuery: (query) => set({ selectedQuery: query }),
+      // dashboards: {
+      //   1: { name: "Dashboard 1", queries: [] }, // Default dashboard
+      // },
+      // activeDashboard: "1",
+
+      // addDashboard: (name) =>
+      //   set((state) => {
+      //     const newId = String(Object.keys(state.dashboards).length + 1);
+      //     return {
+      //       dashboards: {
+      //         ...state.dashboards,
+      //         [newId]: { name, queries: [] },
+      //       },
+      //     };
+      //   }),
+
+      // setActiveDashboard: (dashboardId) =>
+      //   set(() => ({ activeDashboard: dashboardId })),
+
+      addToDashboard: (query) => {
+        set((state) => {
+          const exists = state.dashboardQueries.some((q) => q.id === query.id);
+          if (!exists) {
+            return { dashboardQueries: [...state.dashboardQueries, query] };
+          }
+          return state;
+        });
+      },
+      removeFromDashboard: (queryId) => {
+        set((state) => ({
+          dashboardQueries: state.dashboardQueries.filter(
+            (q) => q.id !== queryId
+          ),
+        }));
+      },
+    }),
+    {
+      name: "query-dashboard-store",
+      getStorage: () => localStorage,
     }
-  },
-}));
+  )
+);
 
 export default useQueryStore;

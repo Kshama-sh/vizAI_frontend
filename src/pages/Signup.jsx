@@ -11,11 +11,11 @@ function Signup() {
     formState: { errors },
   } = useForm();
   const navigate = useNavigate();
-
+  const backendUrl = import.meta.env.BACKEND_URL;
   const onSubmit = async (data) => {
     try {
       const res = await axios.post(
-        "http://192.168.1.21:8000/users/signup",
+        "http://192.168.94.112:8000//users/signup",
         data
       );
       alert("Signup successful!");

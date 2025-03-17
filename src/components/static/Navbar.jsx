@@ -15,21 +15,34 @@ import {
   NavigationMenuItem,
 } from "@/components/ui/navigation-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useNavigate } from "react-router-dom";
+
 function Navbar() {
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(
+    localStorage.getItem("login") === "true"
+  );
+  const navigate = useNavigate();
 
   useEffect(() => {
-    setLoggedIn(localStorage.getItem("login") === "true");
+    const checkLoginStatus = () => {
+      setLoggedIn(localStorage.getItem("login") === "true");
+    };
+
+    checkLoginStatus();
+
+    window.addEventListener("storage", checkLoginStatus);
+    return () => window.removeEventListener("storage", checkLoginStatus);
   }, []);
 
   const handleLogout = () => {
     localStorage.clear();
     setLoggedIn(false);
+    window.dispatchEvent(new Event("storage"));
+    navigate("/Login");
   };
 
   return (
-    <nav className="bg-amber-100 text-gray-900 px-4 py-3 shadow-md flex justify-between items-center">
+    <nav className="bg-[#420039] text-gray-900 px-4 py-3 shadow-md flex justify-between items-center">
       <Link to="/" className="text-2xl font-bold">
         <img
           src={logo}
@@ -44,38 +57,42 @@ function Navbar() {
             <Menu />
           </button>
         </SheetTrigger>
-        <SheetContent className={""}>
+        <SheetContent>
           <div className="flex flex-col p-7 gap-4 mt-5">
-            <Button className="bg-blue-950">
-              <Link to="/Login">Login</Link>
-            </Button>
-            <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
-              <Link to="/Signup">Signup</Link>
-            </Button>
-          </div>
-          <div className="flex flex-col p-7 gap-4 mt-5 ">
-            <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
-              <Link to="/Query">Query</Link>
-            </Button>
-            <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
-              <Link to="/Visualisation">Visualisation</Link>
-            </Button>
-            <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
-              <Link to="/Dashboard">Dashboard</Link>
-            </Button>
-            <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
-              <Link to="/Database">Console</Link>
-            </Button>
+            {loggedIn ? (
+              <>
+                <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
+                  <Link to="/Query">Query</Link>
+                </Button>
+                <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
+                  <Link to="/Visualisation">Visualisation</Link>
+                </Button>
+                <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
+                  <Link to="/Dashboard">Dashboard</Link>
+                </Button>
+                <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
+                  <Link to="/Database">Console</Link>
+                </Button>
+                <Button onClick={handleLogout} className="bg-red-500">
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button className="bg-blue-950">
+                  <Link to="/Login">Login</Link>
+                </Button>
+                <Button className="bg-gradient-to-r from-purple-500 to-pink-600">
+                  <Link to="/Signup">Signup</Link>
+                </Button>
+              </>
+            )}
           </div>
         </SheetContent>
       </Sheet>
 
-      <NavigationMenu
-        className={`lg:flex ${
-          menuOpen ? "block" : "hidden"
-        } absolute top-16 right-0 w-full lg:static lg:w-auto`}
-      >
-        <NavigationMenuList className="flex gap-6 text-black font-bold">
+      <NavigationMenu className="lg:flex hidden">
+        <NavigationMenuList className="flex gap-6 text-white font-bold">
           {loggedIn ? (
             <>
               <NavigationMenuItem>
@@ -132,4 +149,5 @@ function Navbar() {
     </nav>
   );
 }
+
 export default Navbar;

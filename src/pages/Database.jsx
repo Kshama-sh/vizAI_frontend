@@ -12,12 +12,15 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/api/access_token";
+import { useNavigate } from "react-router-dom";
 
 function Database() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("url");
+  const [dbEntryId, setDbEntryId] = useState(null);
+  const [activeTab, setActiveTab] = useState("host");
+  const backendUrl = import.meta.env.BACKEND_URL;
   const [formData, setFormData] = useState({
     dbType: "",
     dbName: "",
@@ -27,7 +30,7 @@ function Database() {
     password: "",
     connection_string: "",
     domain: "",
-    userRole: "",
+    role: "",
     apikey: "",
   });
 
@@ -40,47 +43,49 @@ function Database() {
   };
 
   const handleRoleChange = (value) => {
-    setFormData({ ...formData, userRole: value });
+    setFormData({ ...formData, role: value });
   };
 
+  const navigate = useNavigate();
   const handleDbSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     const payload =
-      activeTab === "url"
+      activeTab === "host"
         ? {
-            dbType: formData.dbType,
-            dbName: formData.dbName,
+            db_type: formData.dbType.toLowerCase(),
+
             host: formData.host,
             port: formData.port,
             user: formData.user,
             password: formData.password,
+            role: String(formData.role),
+            project_id: 1,
           }
         : {
-            db_type: formData.dbType,
-            // dbName: formData.dbName,
+            db_type: formData.dbType.toLowerCase(),
             connection_string: formData.connection_string,
+            role: String(formData.role),
             project_id: 1,
-            api_key: "",
-            domain: "Metro service",
-            // project_id: 1,
-            // connection_string:
-            //   "mysql+pymysql://root:password@localhost:3306/classicmodels",
-            // domain: "Metro service",
-            // db_type: "postgres",
-            // api_key: "",
           };
+    console.log("Final Payload:", JSON.stringify(payload, null, 2));
 
     try {
       const data = await apiRequest(
         "POST",
-        "http://192.168.1.20:8000/external-db",
+        "http://192.168.94.112:8000/external-db",
         payload
       );
       console.log("Database connected successfully:", data);
       alert("Database verified successfully!");
+      if (data && data.db_entry_id) {
+        setDbEntryId(data.db_entry_id);
+      } else {
+        throw new Error("db_entry_id missing in response");
+      }
+      console.log(data.db_entry_id);
       setStep(2);
     } catch (error) {
       setError("Database verification failed. Please check your details.");
@@ -94,20 +99,29 @@ function Database() {
     setLoading(true);
     setError("");
 
+    if (!dbEntryId) {
+      setError(
+        "Database entry ID is missing. Please verify your database first."
+      );
+      setLoading(false);
+      return;
+    }
+
     try {
       const data = await apiRequest(
         "PATCH",
-        "http://192.168.1.20:8000/external-db",
+        "http://192.168.94.112:8000/external-db",
         {
           domain: formData.domain,
-          // userRole: formData.userRole,
-          // apikey: formData.apikey,
-          db_entry_id: 1,
+          project_id: 1,
+          apikey: formData.apikey,
+          db_entry_id: dbEntryId,
         }
       );
 
       alert("Setup Completed!");
       console.log("Setup success:", data);
+      navigate("/Query");
     } catch (error) {
       setError("Setup failed. Please try again.");
     } finally {
@@ -127,15 +141,15 @@ function Database() {
         {step === 1 ? (
           <form onSubmit={handleDbSubmit} className="space-y-4">
             <Tabs
-              defaultValue="url"
+              defaultValue="host"
               className="w-full"
               onValueChange={setActiveTab}
             >
               <TabsList>
-                <TabsTrigger value="url">HOST</TabsTrigger>
-                <TabsTrigger value="uri">URL</TabsTrigger>
+                <TabsTrigger value="host">HOST</TabsTrigger>
+                <TabsTrigger value="url">URL</TabsTrigger>
               </TabsList>
-              <TabsContent value="url" className="space-y-2">
+              <TabsContent value="host" className="space-y-2">
                 <div>
                   <Label>Database Type</Label>
                   <Select onValueChange={handleDbTypeChange}>
@@ -149,7 +163,7 @@ function Database() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
+                {/* <div>
                   <Label>Name</Label>
                   <Input
                     name="dbName"
@@ -158,7 +172,7 @@ function Database() {
                     onChange={handleChange}
                     placeholder="Enter database name"
                   />
-                </div>
+                </div> */}
                 <div>
                   <Label>Host</Label>
                   <Input
@@ -199,8 +213,21 @@ function Database() {
                     placeholder="Enter password"
                   />
                 </div>
+                <div>
+                  <Label>User Role</Label>
+                  <Select onValueChange={handleRoleChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select your Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">Admin</SelectItem>
+                      <SelectItem value="2">Finance</SelectItem>
+                      <SelectItem value="1">Product</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </TabsContent>
-              <TabsContent value="uri" className="space-y-2">
+              <TabsContent value="url" className="space-y-2">
                 <div>
                   <Label>Database Type</Label>
                   <Select onValueChange={handleDbTypeChange}>
@@ -214,7 +241,7 @@ function Database() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
+                {/* <div>
                   <Label>Name</Label>
                   <Input
                     name="dbName"
@@ -223,7 +250,7 @@ function Database() {
                     onChange={handleChange}
                     placeholder="Enter database name"
                   />
-                </div>
+                </div> */}
                 <div>
                   <Label>Connection String</Label>
                   <Input
@@ -233,6 +260,19 @@ function Database() {
                     onChange={handleChange}
                     placeholder="Enter your Connection String"
                   />
+                </div>
+                <div>
+                  <Label>User Role</Label>
+                  <Select onValueChange={handleRoleChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select your Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">Admin</SelectItem>
+                      <SelectItem value="2">Finance</SelectItem>
+                      <SelectItem value="1">Product</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </TabsContent>
             </Tabs>
@@ -256,7 +296,7 @@ function Database() {
                 placeholder="Enter your domain"
               />
             </div>
-            <div>
+            {/* <div>
               <Label>User Role</Label>
               <Select onValueChange={handleRoleChange}>
                 <SelectTrigger className="w-full">
@@ -268,7 +308,7 @@ function Database() {
                   <SelectItem value="product">Product</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
             <div className="space-y-2">
               <Label className="mb-1 text-lg font-semibold">API Key</Label>
               <p className="text-sm text-gray-500">
