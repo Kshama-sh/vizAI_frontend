@@ -1,27 +1,36 @@
 import React from "react";
 import Chart from "react-apexcharts";
 
-const DynamicChart = ({ data, chartType }) => {
-  if (!data || data.length === 0) {
+const DynamicChart = ({ data = [], chartType = "bar" }) => {
+  console.log("Chart Data Received:", data, "Chart Type:", chartType);
+  console.log("Chart Data Received:", data);
+  if (!Array.isArray(data) || data.length === 0) {
     return (
       <p className="text-center text-gray-500">No chart data available.</p>
     );
   }
 
-  let chartOptions;
-  let chartSeries;
+  const normalizedChartType = chartType.toLowerCase();
 
-  if (chartType === "donut" || chartType === "pie") {
-    chartOptions = { labels: data.map((item) => item.label) };
+  let chartOptions = {};
+  let chartSeries = [];
+
+  if (normalizedChartType === "donut" || normalizedChartType === "pie") {
+    chartOptions = {
+      labels: data.map((item) => item.label),
+      legend: { position: "bottom" },
+    };
     chartSeries = data.map((item) => item.value);
   } else {
     chartOptions = {
-      chart: { type: chartType },
+      chart: { type: normalizedChartType },
       xaxis: { categories: data.map((item) => item.label) },
-      colors: ["#2563eb"],
+      colors: ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"],
       stroke: { curve: "smooth" },
+      dataLabels: { enabled: true },
+      tooltip: { enabled: true },
     };
-    chartSeries = [{ name: "Value", data: data.map((item) => item.value) }];
+    chartSeries = [{ name: "Employees", data: data.map((item) => item.value) }];
   }
 
   return (
@@ -29,7 +38,7 @@ const DynamicChart = ({ data, chartType }) => {
       <Chart
         options={chartOptions}
         series={chartSeries}
-        type={chartType}
+        type={normalizedChartType}
         height={400}
       />
     </div>

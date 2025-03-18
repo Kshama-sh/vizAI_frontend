@@ -18,6 +18,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
+import DynamicChart from "@/components/static/DynamicChart";
+import { apiRequest } from "../api/access_token";
+
 function Query() {
   const {
     fetchQueryTitles,
@@ -26,13 +29,23 @@ function Query() {
     setSelectedQuery,
     addToDashboard,
     queries,
+    fetchAllQueriesChartData,
+    queriesWithChartData,
+    isLoadingChartData,
   } = useQueryStore();
 
   const [selectedQueries, setSelectedQueries] = useState(new Set());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [dateRange, setDateRange] = useState({
+    startDate: "",
+    endDate: "",
+  });
   const navigate = useNavigate();
+  const [selectedQuery, setSelectedQueryState] = useState(null);
+  const [message, setMessage] = useState("");
+  const [response, setResponse] = useState("");
 
   useEffect(() => {
     const loadQueries = async () => {
@@ -77,22 +90,144 @@ function Query() {
     });
   };
 
-  const handlePreview = (query) => {
-    console.log("🔍 Previewing Query:", query);
-    setSelectedQuery(query);
-    executeQuery(query.id);
-    setIsDialogOpen(true);
+  const handleDateRangeChange = (field, value) => {
+    setDateRange((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
-  const handleAddToDashboard = () => {
-    selectedQueries.forEach((queryId) => {
-      const query = queries.find((q) => q.id === queryId);
-      if (query) {
-        addToDashboard(query);
+  const applyDateRange = async () => {
+    try {
+      setLoading(true);
+      const queryIds = Array.from(selectedQueries);
+      await updateQueriesWithDateRange(
+        queryIds,
+        dateRange.startDate,
+        dateRange.endDate
+      );
+    } catch (err) {
+      console.error("Error applying date range:", err);
+      setError("Failed to apply date range to queries");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePreview = async (query) => {
+    console.log("🔍 Previewing Query:", query);
+    setSelectedQueryState(query);
+    setSelectedQuery(query);
+
+    try {
+      await executeQuery(query.id);
+      setIsDialogOpen(true);
+    } catch (error) {
+      console.error("Error previewing query:", error);
+    }
+  };
+
+  const handleAddToDashboard = async () => {
+    setLoading(true);
+
+    try {
+      for (const queryId of selectedQueries) {
+        const query = queries.find((q) => q.id === queryId);
+        if (query) {
+          const result = await executeQuery(query.id);
+
+          if (result) {
+            addToDashboard({
+              ...query,
+              data: result.data || [],
+              chartType: result.chartType || "line",
+            });
+          }
+        }
       }
-    });
-    setSelectedQueries(new Set());
-    navigate("/Dashboard");
+
+      setSelectedQueries(new Set());
+      navigate("/Dashboard");
+    } catch (error) {
+      console.error("Error adding queries to dashboard:", error);
+      setError("Failed to add queries to dashboard");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // const handleSend = async () => {
+  //   if (!message.trim()) {
+  //     console.warn("handleSend: Message is empty, skipping request.");
+  //     return;
+  //   }
+
+  //   try {
+  //     const payload = { nl_query: message };
+  //     console.log("Sending request with payload:", payload);
+
+  //     const res = await apiRequest(
+  //       "POST",
+  //       "http://192.168.94.112:8000/external-db/nl-to-sql",
+  //       payload
+  //     );
+
+  //     console.log("handleSend: Response received from backend:", res);
+
+  //     if (res && res.reply) {
+  //       console.log("handleSend: Setting response:", res.reply);
+  //       setResponse(res.reply);
+  //     } else {
+  //       console.warn("handleSend: No reply received in response.");
+  //     }
+  //   } catch (error) {
+  //     console.error("handleSend: Error sending message:", error);
+  //     console.error(
+  //       "handleSend: Full error details:",
+  //       error.response?.data || error.message
+  //     );
+  //   }
+
+  //   console.log("handleSend: Clearing message input.");
+  //   setMessage(""); // Clear input after sending
+  // };
+  const handleSend = async () => {
+    if (!message.trim()) {
+      console.warn("handleSend: Message is empty, skipping request.");
+      return;
+    }
+
+    try {
+      const payload = {
+        nl_query: message, // Use the current message from the input
+      };
+
+      console.log("Sending request with payload:", payload);
+
+      const res = await apiRequest(
+        "POST",
+        "http://192.168.94.112:8000/external-db/nl-to-sql",
+        payload
+      );
+
+      console.log("handleSend: Response received from backend:", res);
+
+      if (res && res.reply) {
+        console.log("handleSend: Setting response:", res.reply);
+        setResponse(res.reply);
+      } else {
+        console.warn("handleSend: No reply received in response.");
+      }
+    } catch (error) {
+      console.error("handleSend: Error sending message:", error);
+      console.error(
+        "handleSend: Full error details:",
+        error.response?.data || error.message
+      );
+    }
+
+    console.log("handleSend: Clearing message input.");
+    setMessage(""); // Clear input after sending
   };
 
   if (loading) {
@@ -116,7 +251,6 @@ function Query() {
       </div>
     );
   }
-
   return (
     <div className="p-6 flex flex-col items-center">
       {queries.length === 0 ? (
@@ -154,6 +288,7 @@ function Query() {
           ))}
         </div>
       )}
+
       <div className="mt-3 w-full max-w-md flex justify-center p-2">
         <Button className="w-full">Load more Queries</Button>
       </div>
@@ -167,6 +302,7 @@ function Query() {
           </Button>
         </div>
       )}
+
       <div className="mt-3 flex flex-col space-x-3 w-full p-4 rounded-2xl shadow-lg border gap-0.5">
         <Label htmlFor="chat" className="font-bold text-gray-400">
           Chat
@@ -176,20 +312,43 @@ function Query() {
             id="chat"
             type="text"
             placeholder="Ask anything"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
             className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
           />
-          <Button type="submit">Send</Button>
+          <Button type="submit" onClick={handleSend}>
+            Send
+          </Button>
         </div>
       </div>
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Query Preview</DialogTitle>
+            <DialogTitle>
+              {selectedQuery?.explanation || "Query Preview"}
+            </DialogTitle>
           </DialogHeader>
           {queryResult ? (
-            <pre className="bg-gray-100 p-4 rounded-md overflow-auto max-h-96">
-              {JSON.stringify(queryResult, null, 2)}
-            </pre>
+            <div className="p-4">
+              {Array.isArray(queryResult.data) &&
+              queryResult.data.length > 0 ? (
+                <div className="h-80">
+                  <DynamicChart
+                    data={queryResult.data}
+                    chartType={(queryResult.chartType || "line").toLowerCase()}
+                  />
+                </div>
+              ) : (
+                <p className="text-center text-gray-500">
+                  No valid chart data available.
+                </p>
+              )}
+              {queryResult.report && (
+                <p className="mt-4 text-gray-600">
+                  <strong>Report:</strong> {queryResult.report}
+                </p>
+              )}
+            </div>
           ) : (
             <div className="flex items-center justify-center p-4">
               <Loader2 className="h-6 w-6 animate-spin mr-2" />
@@ -203,28 +362,3 @@ function Query() {
 }
 
 export default Query;
-
-{
-  /* <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-3xl p-6">
-          <DialogHeader>
-            <DialogTitle>{selectedQuery?.title || "Query Preview"}</DialogTitle>
-          </DialogHeader>
-
-          {queryResult?.data ? (
-            <div className="flex flex-col items-center gap-4">
-              <DynamicChart
-                data={queryResult.data}
-                chartType={queryResult.chartType}
-              />
-              <p className="text-gray-600 text-sm text-center">
-                <span className="font-bold">Report Summary:</span>
-                {queryResult.report || "No summary available"}
-              </p>
-            </div>
-          ) : (
-            <p className="text-center text-gray-500">Fetching results...</p>
-          )}
-        </DialogContent>
-      </Dialog> */
-}

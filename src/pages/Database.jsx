@@ -122,7 +122,7 @@ function Database() {
       await fetchQueryTitles(dbEntryId);
       localStorage.setItem("current-db-entry-id", dbEntryId);
       alert("Setup Completed!");
-      navigate("/Query");
+      navigate("/Dashboard");
     } catch (error) {
       console.error("Setup failed:", error);
       setError("Setup failed. Please try again.");

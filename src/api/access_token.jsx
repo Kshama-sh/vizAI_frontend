@@ -16,12 +16,7 @@ const getAccessToken = () => {
   }
 };
 
-export const apiRequest = async (
-  method,
-  endpoint,
-  data = null,
-  params = {}
-) => {
+export const apiRequest = async (method, endpoint, data, params = {}) => {
   try {
     const accessToken = getAccessToken();
     if (!accessToken) {
@@ -30,12 +25,13 @@ export const apiRequest = async (
 
     const headers = {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`, // Ensure correct header
+      Authorization: `Bearer ${accessToken}`,
     };
 
     const response = await axios({
       method,
       url: endpoint,
+
       data,
       params,
       headers,

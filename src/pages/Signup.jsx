@@ -15,7 +15,7 @@ function Signup() {
   const onSubmit = async (data) => {
     try {
       const res = await axios.post(
-        "http://192.168.94.112:8000//users/signup",
+        "http://192.168.94.112:8000/users/signup",
         data
       );
       alert("Signup successful!");
