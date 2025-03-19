@@ -158,6 +158,44 @@ function Query() {
   };
 
   //sending nl query
+  // const handleSend = async () => {
+  //   if (!message.trim()) {
+  //     console.warn("handleSend: Message is empty, skipping request.");
+  //     return;
+  //   }
+
+  //   try {
+  //     const payload = {
+  //       nl_query: message,
+  //     };
+
+  //     console.log("Sending request with payload:", payload);
+
+  //     const res = await apiRequest(
+  //       "POST",
+  //       `${import.meta.env.VITE_BACKEND_URL}/external-db/nl-to-sql`,
+  //       payload
+  //     );
+
+  //     console.log("handleSend: Response received from backend:", res);
+
+  //     if (res && res.reply) {
+  //       console.log("handleSend: Setting response:", res.reply);
+  //       setResponse(res.reply);
+  //     } else {
+  //       console.warn("handleSend: No reply received in response.");
+  //     }
+  //   } catch (error) {
+  //     console.error("handleSend: Error sending message:", error);
+  //     console.error(
+  //       "handleSend: Full error details:",
+  //       error.response?.data || error.message
+  //     );
+  //   }
+
+  //   console.log("handleSend: Clearing message input.");
+  //   setMessage("");
+  // };
   const handleSend = async () => {
     if (!message.trim()) {
       console.warn("handleSend: Message is empty, skipping request.");
@@ -165,12 +203,15 @@ function Query() {
     }
 
     try {
+      setLoading(true);
+
       const payload = {
         nl_query: message,
       };
 
       console.log("Sending request with payload:", payload);
 
+      // Convert NL to SQL
       const res = await apiRequest(
         "POST",
         `${import.meta.env.VITE_BACKEND_URL}/external-db/nl-to-sql`,
@@ -179,24 +220,37 @@ function Query() {
 
       console.log("handleSend: Response received from backend:", res);
 
-      if (res && res.reply) {
-        console.log("handleSend: Setting response:", res.reply);
-        setResponse(res.reply);
+      if (res && res.save_status && res.save_status.query_id) {
+        const queryId = res.save_status.query_id;
+
+        // Create a temporary query object
+        const tempQuery = {
+          id: queryId,
+          explanation:
+            res.sql_query.explanation || "Natural Language Query Result",
+          chart_type: res.sql_query.chart_type || "bar",
+          query: res.sql_query.sql_query || "",
+        };
+
+        // Set as selected query
+        setSelectedQueryState(tempQuery);
+        setSelectedQuery(tempQuery);
+
+        // Execute the query to get chart data
+        await executeQuery(queryId);
+
+        // Open dialog
+        setIsDialogOpen(true);
       } else {
-        console.warn("handleSend: No reply received in response.");
+        console.warn("No query ID received in response");
       }
     } catch (error) {
       console.error("handleSend: Error sending message:", error);
-      console.error(
-        "handleSend: Full error details:",
-        error.response?.data || error.message
-      );
+    } finally {
+      setLoading(false);
+      setMessage("");
     }
-
-    console.log("handleSend: Clearing message input.");
-    setMessage("");
   };
-
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-64">

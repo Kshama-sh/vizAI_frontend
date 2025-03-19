@@ -25,7 +25,7 @@ function Database() {
   const { fetchQueryTitles } = useQueryStore();
   const [formData, setFormData] = useState({
     dbType: "",
-    dbName: "",
+    name: "",
     host: "",
     port: "",
     user: "",
@@ -188,11 +188,11 @@ function Database() {
                 <div>
                   <Label>Name</Label>
                   <Input
-                    name="db_name"
+                    name="name"
                     type="text"
                     value={formData.name}
                     onChange={handleChange}
-                    placeholder="Enter name"
+                    placeholder="Enter database name"
                   />
                 </div>
                 <div>
