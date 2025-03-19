@@ -21,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import DynamicChart from "@/components/static/DynamicChart";
 import { apiRequest } from "../api/access_token";
 
+import getChartThumbnail from "../utils/chartThumbnails";
 function Query() {
   const {
     fetchQueryTitles,
@@ -156,41 +157,7 @@ function Query() {
     }
   };
 
-  // const handleSend = async () => {
-  //   if (!message.trim()) {
-  //     console.warn("handleSend: Message is empty, skipping request.");
-  //     return;
-  //   }
-
-  //   try {
-  //     const payload = { nl_query: message };
-  //     console.log("Sending request with payload:", payload);
-
-  //     const res = await apiRequest(
-  //       "POST",
-  //       "http://192.168.94.112:8000/external-db/nl-to-sql",
-  //       payload
-  //     );
-
-  //     console.log("handleSend: Response received from backend:", res);
-
-  //     if (res && res.reply) {
-  //       console.log("handleSend: Setting response:", res.reply);
-  //       setResponse(res.reply);
-  //     } else {
-  //       console.warn("handleSend: No reply received in response.");
-  //     }
-  //   } catch (error) {
-  //     console.error("handleSend: Error sending message:", error);
-  //     console.error(
-  //       "handleSend: Full error details:",
-  //       error.response?.data || error.message
-  //     );
-  //   }
-
-  //   console.log("handleSend: Clearing message input.");
-  //   setMessage(""); // Clear input after sending
-  // };
+  //sending nl query
   const handleSend = async () => {
     if (!message.trim()) {
       console.warn("handleSend: Message is empty, skipping request.");
@@ -199,14 +166,14 @@ function Query() {
 
     try {
       const payload = {
-        nl_query: message, // Use the current message from the input
+        nl_query: message,
       };
 
       console.log("Sending request with payload:", payload);
 
       const res = await apiRequest(
         "POST",
-        "http://192.168.94.112:8000/external-db/nl-to-sql",
+        `${import.meta.env.VITE_BACKEND_URL}/external-db/nl-to-sql`,
         payload
       );
 
@@ -227,7 +194,7 @@ function Query() {
     }
 
     console.log("handleSend: Clearing message input.");
-    setMessage(""); // Clear input after sending
+    setMessage("");
   };
 
   if (loading) {
@@ -255,8 +222,8 @@ function Query() {
     <div className="p-6 flex flex-col items-center">
       {queries.length === 0 ? (
         <div className="text-center py-10">
-          <p className="text-gray-500 mb-4">
-            No queries found. Check API response or database connection.
+          <p className="text-gray-300 mb-4">
+            No queries found. Check database connection.
           </p>
           <Button onClick={() => (window.location.href = "/Database")}>
             Setup Database Connection
@@ -267,7 +234,7 @@ function Query() {
           {queries.map((query) => (
             <Card
               key={query.id}
-              className="flex flex-col justify-between p-4 border hover:shadow-xl"
+              className="flex flex-col justify-between p-4 border hover:shadow-xl bg-accent-foreground bg-[#381952]"
             >
               <CardHeader className="flex flex-row justify-end">
                 <Checkbox
@@ -276,11 +243,21 @@ function Query() {
                   onCheckedChange={() => handleCheckboxChange(query.id)}
                 />
               </CardHeader>
-              <CardContent className="text-gray-600 text-sm">
+              <CardContent className="text-white text-sm">
                 {query.explanation || "No title available"}
+                <div className="w-full h-15 rounded-lg overflow-hidden">
+                  <img
+                    src={getChartThumbnail(query.chart_type)}
+                    alt={`${query.chart_type} preview`}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" onClick={() => handlePreview(query)}>
+                <Button
+                  className="w-full bg-[#C4BEEE]"
+                  onClick={() => handlePreview(query)}
+                >
                   Preview
                 </Button>
               </CardFooter>
@@ -289,9 +266,6 @@ function Query() {
         </div>
       )}
 
-      <div className="mt-3 w-full max-w-md flex justify-center p-2">
-        <Button className="w-full">Load more Queries</Button>
-      </div>
       {selectedQueries.size > 0 && (
         <div className="mt-4">
           <Button
@@ -302,7 +276,9 @@ function Query() {
           </Button>
         </div>
       )}
-
+      <div className="mt-3 w-full max-w-md flex justify-center p-2 bg">
+        <Button className="w-full bg-[#2D1242]">Load more Queries</Button>
+      </div>
       <div className="mt-3 flex flex-col space-x-3 w-full p-4 rounded-2xl shadow-lg border gap-0.5">
         <Label htmlFor="chat" className="font-bold text-gray-400">
           Chat
@@ -316,13 +292,13 @@ function Query() {
             onChange={(e) => setMessage(e.target.value)}
             className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
           />
-          <Button type="submit" onClick={handleSend}>
-            Send
+          <Button type="submit" className="bg-[#381952]" onClick={handleSend}>
+            Execute
           </Button>
         </div>
       </div>
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl ">
           <DialogHeader>
             <DialogTitle>
               {selectedQuery?.explanation || "Query Preview"}
@@ -332,7 +308,7 @@ function Query() {
             <div className="p-4">
               {Array.isArray(queryResult.data) &&
               queryResult.data.length > 0 ? (
-                <div className="h-80">
+                <div className="h-100">
                   <DynamicChart
                     data={queryResult.data}
                     chartType={(queryResult.chartType || "line").toLowerCase()}
@@ -341,11 +317,6 @@ function Query() {
               ) : (
                 <p className="text-center text-gray-500">
                   No valid chart data available.
-                </p>
-              )}
-              {queryResult.report && (
-                <p className="mt-4 text-gray-600">
-                  <strong>Report:</strong> {queryResult.report}
                 </p>
               )}
             </div>

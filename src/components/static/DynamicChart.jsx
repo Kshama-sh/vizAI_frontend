@@ -23,14 +23,29 @@ const DynamicChart = ({ data = [], chartType = "bar" }) => {
     chartSeries = data.map((item) => item.value);
   } else {
     chartOptions = {
-      chart: { type: normalizedChartType },
+      chart: {
+        type: normalizedChartType,
+        toolbar: {
+          show: true,
+          tools: {
+            download: true, // Allow downloading as PNG/SVG
+            selection: true,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true,
+          },
+        },
+        zoom: { enabled: true },
+      },
       xaxis: { categories: data.map((item) => item.label) },
       colors: ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"],
       stroke: { curve: "smooth" },
       dataLabels: { enabled: true },
       tooltip: { enabled: true },
     };
-    chartSeries = [{ name: "Employees", data: data.map((item) => item.value) }];
+    chartSeries = [{ name: "data", data: data.map((item) => item.value) }];
   }
 
   return (

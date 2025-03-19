@@ -12,6 +12,7 @@ const useQueryStore = create(
       dashboards: [{ id: "default", name: "Main Dashboard" }],
       activeDashboardId: "default",
 
+      //fetch the query
       fetchQueryTitles: async (dbEntryId) => {
         console.log(" Fetching queries for DB ID:", dbEntryId);
 
@@ -21,48 +22,41 @@ const useQueryStore = create(
         }
 
         try {
-          const url = `http://192.168.94.112:8000/execute-query/?external_db_id=${dbEntryId}`;
+          const url = `${
+            import.meta.env.VITE_BACKEND_URL
+          }/execute-query/?external_db_id=${dbEntryId}`;
+
           console.log("Fetching from URL:", url);
 
           const response = await apiRequest("GET", url);
           console.log("API Response:", response);
 
-          // Check if response exists
           if (!response) {
             console.error(" No response received");
             throw new Error("No response received");
           }
-
-          // Handle case where response is directly an array
           if (Array.isArray(response)) {
             console.log("Response is an array with", response.length, "items");
             set({ queries: response });
             return;
           }
-
-          // Handle case where response is the data object
           if (response && !response.data && typeof response === "object") {
             console.log("Response is an object, checking if valid");
             set({ queries: response });
             return;
           }
-
-          // Handle case where response.data is the data (original expected format)
           if (response && response.data) {
             const queries = Array.isArray(response.data)
               ? response.data
               : response.data.queries || [];
-
             if (!Array.isArray(queries)) {
               console.error(" Queries is not an array:", queries);
               throw new Error("Invalid queries format");
             }
-
             set({ queries });
             console.log(" Queries stored successfully:", queries);
             return;
           }
-
           console.error(" Unhandled response format:", response);
           throw new Error("Invalid API response");
         } catch (error) {
@@ -70,6 +64,7 @@ const useQueryStore = create(
         }
       },
 
+      //fetch the result of the query
       executeQuery: async (queryId) => {
         console.log("Executing query ID:", queryId);
 
@@ -80,23 +75,22 @@ const useQueryStore = create(
             return null;
           }
 
-          // Get the current dbEntryId from localStorage
           const dbEntryId = localStorage.getItem("current-db-entry-id") || "34";
 
-          const url = `http://192.168.94.112:8000/execute-query/`;
+          //const url = `http://192.168.94.112:8000/execute-query/`;
+          const url = `${import.meta.env.VITE_BACKEND_URL}/execute-query/`;
+
           const requestBody = { query_id: queryId, external_db_id: dbEntryId };
 
           const response = await apiRequest("POST", url, requestBody);
           console.log("Query Result:", response);
 
-          // Validate response
           if (!response) {
             console.error("No response received");
             set({ queryResult: { error: "No response received" } });
             return null;
           }
 
-          // Properly extract result data
           let formattedResult = {
             query: response.query || query.query,
             data: Array.isArray(response.result) ? response.result : [],
@@ -108,7 +102,6 @@ const useQueryStore = create(
             formattedResult.error = "Empty result set";
           }
 
-          // Update specific query result when previewing
           set({ queryResult: formattedResult });
 
           return formattedResult;
@@ -172,7 +165,7 @@ const useQueryStore = create(
         }));
         return dashboardId;
       },
-
+      //remove dashboard
       removeDashboard: (dashboardId) => {
         set((state) => {
           // Don't remove default dashboard

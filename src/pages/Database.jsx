@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
 import {
   Select,
   SelectItem,
@@ -35,20 +36,23 @@ function Database() {
     apikey: "",
   });
 
+  const navigate = useNavigate();
+  //changes in form
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  //change in dropdown for db type
   const handleDbTypeChange = (value) => {
     setFormData({ ...formData, dbType: value });
   };
 
+  //change in dropdown for role type
   const handleRoleChange = (value) => {
     setFormData({ ...formData, role: value });
   };
 
-  const navigate = useNavigate();
-
+  //handle db submission
   const handleDbSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -58,6 +62,7 @@ function Database() {
       activeTab === "host"
         ? {
             db_type: formData.dbType.toLowerCase(),
+            db_name: formData.name,
             host: formData.host,
             port: formData.port,
             user: formData.user,
@@ -76,7 +81,7 @@ function Database() {
     try {
       const data = await apiRequest(
         "POST",
-        "http://192.168.94.112:8000/external-db",
+        `${import.meta.env.VITE_BACKEND_URL}/external-db`,
         payload
       );
       console.log("Database connected successfully:", data);
@@ -95,6 +100,7 @@ function Database() {
     }
   };
 
+  //patch for role and domain
   const handleFinalSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -109,12 +115,16 @@ function Database() {
     }
 
     try {
-      await apiRequest("PATCH", "http://192.168.94.112:8000/external-db", {
-        domain: formData.domain,
-        project_id: 1,
-        apikey: formData.apikey,
-        db_entry_id: dbEntryId,
-      });
+      await apiRequest(
+        "PATCH",
+        `${import.meta.env.VITE_BACKEND_URL}/external-db`,
+        {
+          domain: formData.domain,
+          project_id: 1,
+          apikey: formData.apikey,
+          db_entry_id: dbEntryId,
+        }
+      );
       console.log(
         "Setup completed, fetching queries for dbEntryId:",
         dbEntryId
@@ -130,6 +140,16 @@ function Database() {
       setLoading(false);
     }
   };
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+        <p className="mt-4 text-lg font-semibold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent animate-pulse">
+          Hang tight... We're connecting!
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex justify-center items-center min-h-screen">
@@ -164,6 +184,16 @@ function Database() {
                       <SelectItem value="sqlite">SQLite</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div>
+                  <Label>Name</Label>
+                  <Input
+                    name="db_name"
+                    type="text"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Enter name"
+                  />
                 </div>
                 <div>
                   <Label>Host</Label>
@@ -260,7 +290,7 @@ function Database() {
             </Tabs>
             <Button
               type="submit"
-              className="w-full bg-blue-950"
+              className="w-full bg-[#230C33]"
               disabled={loading}
             >
               {loading ? "Verifying..." : "Verify Database"}
@@ -297,7 +327,14 @@ function Database() {
               className="w-full bg-blue-950"
               disabled={loading}
             >
-              {loading ? "Setting up..." : "Complete Setup"}
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <span>Setting up...</span>
+                </div>
+              ) : (
+                "Complete Setup"
+              )}
             </Button>
           </form>
         )}

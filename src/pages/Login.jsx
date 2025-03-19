@@ -15,7 +15,7 @@ function Login() {
   const handleLogin = async (data) => {
     try {
       const res = await axios.post(
-        "http://192.168.94.112:8000/users/login",
+        `${import.meta.env.VITE_BACKEND_URL}/users/login`,
         data
       );
 
