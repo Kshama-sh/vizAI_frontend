@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
@@ -15,16 +15,16 @@ function Login() {
   const handleLogin = async (data) => {
     try {
       const res = await axios.post(
-        "http://192.168.1.21:8000/users/login",
+        `${import.meta.env.VITE_BACKEND_URL}/users/login`,
         data
       );
-      alert("Login successful!");
-      navigate("/Database");
-      console.log(res);
+
       if (res.status === 200) {
         localStorage.setItem("login", "true");
         localStorage.setItem("accessToken", res.data.access_token);
-        console.log("Login successful");
+        alert("Login successful!");
+        window.dispatchEvent(new Event("storage"));
+        navigate("/Database");
       }
     } catch (error) {
       alert("Login failed! " + (error.response?.data?.message || "Try again."));
@@ -77,21 +77,13 @@ function Login() {
 
         <Button
           type="submit"
-          className="w-full bg-blue-950 text-white py-3 rounded-lg transition"
+          className="w-full bg-[#230C33] text-white py-3 rounded-lg transition"
         >
           Login
         </Button>
       </form>
-      <p className="text-center text-gray-500 mt-4">
-        Don't have an account?{" "}
-        <span
-          onClick={() => navigate("/Signup")}
-          className="text-blue-600 font-medium cursor-pointer hover:underline"
-        >
-          Sign up
-        </span>
-      </p>
     </div>
   );
 }
+
 export default Login;

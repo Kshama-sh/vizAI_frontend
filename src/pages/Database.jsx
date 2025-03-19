@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
 import {
   Select,
   SelectItem,
@@ -12,75 +13,85 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest } from "@/api/access_token";
+import { useNavigate } from "react-router-dom";
+import useQueryStore from "@/store/queryStore";
 
 function Database() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("url");
+  const [dbEntryId, setDbEntryId] = useState(null);
+  const [activeTab, setActiveTab] = useState("host");
+  const { fetchQueryTitles } = useQueryStore();
   const [formData, setFormData] = useState({
     dbType: "",
-    dbName: "",
+    name: "",
     host: "",
     port: "",
     user: "",
     password: "",
     connection_string: "",
     domain: "",
-    userRole: "",
+    role: "",
     apikey: "",
   });
 
+  const navigate = useNavigate();
+  //changes in form
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  //change in dropdown for db type
   const handleDbTypeChange = (value) => {
     setFormData({ ...formData, dbType: value });
   };
 
+  //change in dropdown for role type
   const handleRoleChange = (value) => {
-    setFormData({ ...formData, userRole: value });
+    setFormData({ ...formData, role: value });
   };
 
+  //handle db submission
   const handleDbSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     const payload =
-      activeTab === "url"
+      activeTab === "host"
         ? {
-            dbType: formData.dbType,
-            dbName: formData.dbName,
+            db_type: formData.dbType.toLowerCase(),
+            db_name: formData.name,
             host: formData.host,
             port: formData.port,
             user: formData.user,
             password: formData.password,
+            role: String(formData.role),
+            project_id: 1,
           }
         : {
-            db_type: formData.dbType,
-            // dbName: formData.dbName,
+            db_type: formData.dbType.toLowerCase(),
             connection_string: formData.connection_string,
+            role: String(formData.role),
             project_id: 1,
-            api_key: "",
-            domain: "Metro service",
-            // project_id: 1,
-            // connection_string:
-            //   "mysql+pymysql://root:password@localhost:3306/classicmodels",
-            // domain: "Metro service",
-            // db_type: "postgres",
-            // api_key: "",
           };
+    console.log("Final Payload:", JSON.stringify(payload, null, 2));
 
     try {
       const data = await apiRequest(
         "POST",
-        "http://192.168.1.20:8000/external-db",
+        `${import.meta.env.VITE_BACKEND_URL}/external-db`,
         payload
       );
       console.log("Database connected successfully:", data);
       alert("Database verified successfully!");
+      if (data && data.db_entry_id) {
+        setDbEntryId(data.db_entry_id);
+      } else {
+        throw new Error("db_entry_id missing in response");
+      }
+      console.log(data.db_entry_id);
       setStep(2);
     } catch (error) {
       setError("Database verification failed. Please check your details.");
@@ -89,31 +100,56 @@ function Database() {
     }
   };
 
+  //patch for role and domain
   const handleFinalSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
+    if (!dbEntryId) {
+      setError(
+        "Database entry ID is missing. Please verify your database first."
+      );
+      setLoading(false);
+      return;
+    }
+
     try {
-      const data = await apiRequest(
+      await apiRequest(
         "PATCH",
-        "http://192.168.1.20:8000/external-db",
+        `${import.meta.env.VITE_BACKEND_URL}/external-db`,
         {
           domain: formData.domain,
-          // userRole: formData.userRole,
-          // apikey: formData.apikey,
-          db_entry_id: 1,
+          project_id: 1,
+          apikey: formData.apikey,
+          db_entry_id: dbEntryId,
         }
       );
-
+      console.log(
+        "Setup completed, fetching queries for dbEntryId:",
+        dbEntryId
+      );
+      await fetchQueryTitles(dbEntryId);
+      localStorage.setItem("current-db-entry-id", dbEntryId);
       alert("Setup Completed!");
-      console.log("Setup success:", data);
+      navigate("/Dashboard");
     } catch (error) {
+      console.error("Setup failed:", error);
       setError("Setup failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+        <p className="mt-4 text-lg font-semibold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent animate-pulse">
+          Hang tight... We're connecting!
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex justify-center items-center min-h-screen">
@@ -127,15 +163,15 @@ function Database() {
         {step === 1 ? (
           <form onSubmit={handleDbSubmit} className="space-y-4">
             <Tabs
-              defaultValue="url"
+              defaultValue="host"
               className="w-full"
               onValueChange={setActiveTab}
             >
               <TabsList>
-                <TabsTrigger value="url">HOST</TabsTrigger>
-                <TabsTrigger value="uri">URL</TabsTrigger>
+                <TabsTrigger value="host">HOST</TabsTrigger>
+                <TabsTrigger value="url">URL</TabsTrigger>
               </TabsList>
-              <TabsContent value="url" className="space-y-2">
+              <TabsContent value="host" className="space-y-2">
                 <div>
                   <Label>Database Type</Label>
                   <Select onValueChange={handleDbTypeChange}>
@@ -152,9 +188,9 @@ function Database() {
                 <div>
                   <Label>Name</Label>
                   <Input
-                    name="dbName"
+                    name="name"
                     type="text"
-                    value={formData.dbName}
+                    value={formData.name}
                     onChange={handleChange}
                     placeholder="Enter database name"
                   />
@@ -199,8 +235,21 @@ function Database() {
                     placeholder="Enter password"
                   />
                 </div>
+                <div>
+                  <Label>User Role</Label>
+                  <Select onValueChange={handleRoleChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select your Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">Admin</SelectItem>
+                      <SelectItem value="2">Finance</SelectItem>
+                      <SelectItem value="1">Product</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </TabsContent>
-              <TabsContent value="uri" className="space-y-2">
+              <TabsContent value="url" className="space-y-2">
                 <div>
                   <Label>Database Type</Label>
                   <Select onValueChange={handleDbTypeChange}>
@@ -215,16 +264,6 @@ function Database() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Name</Label>
-                  <Input
-                    name="dbName"
-                    type="text"
-                    value={formData.dbName}
-                    onChange={handleChange}
-                    placeholder="Enter database name"
-                  />
-                </div>
-                <div>
                   <Label>Connection String</Label>
                   <Input
                     name="connection_string"
@@ -234,11 +273,24 @@ function Database() {
                     placeholder="Enter your Connection String"
                   />
                 </div>
+                <div>
+                  <Label>User Role</Label>
+                  <Select onValueChange={handleRoleChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select your Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">Admin</SelectItem>
+                      <SelectItem value="2">Finance</SelectItem>
+                      <SelectItem value="1">Product</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </TabsContent>
             </Tabs>
             <Button
               type="submit"
-              className="w-full bg-blue-950"
+              className="w-full bg-[#230C33]"
               disabled={loading}
             >
               {loading ? "Verifying..." : "Verify Database"}
@@ -255,19 +307,6 @@ function Database() {
                 onChange={handleChange}
                 placeholder="Enter your domain"
               />
-            </div>
-            <div>
-              <Label>User Role</Label>
-              <Select onValueChange={handleRoleChange}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select your Role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="finance">Finance</SelectItem>
-                  <SelectItem value="product">Product</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-2">
               <Label className="mb-1 text-lg font-semibold">API Key</Label>
@@ -288,7 +327,14 @@ function Database() {
               className="w-full bg-blue-950"
               disabled={loading}
             >
-              {loading ? "Setting up..." : "Complete Setup"}
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <span>Setting up...</span>
+                </div>
+              ) : (
+                "Complete Setup"
+              )}
             </Button>
           </form>
         )}
