@@ -22,6 +22,7 @@ function Database() {
   const [error, setError] = useState("");
   const [dbEntryId, setDbEntryId] = useState(null);
   const [activeTab, setActiveTab] = useState("host");
+  const [dashboardId, setDashboardId] = useState(null);
   const { fetchQueryTitles } = useQueryStore();
   const [formData, setFormData] = useState({
     dbType: "",
@@ -100,6 +101,34 @@ function Database() {
     }
   };
 
+  const createOrGetDashboard = async () => {
+    setLoading(true);
+    const payload = {
+      db_entry_id: dbEntryId, // Ensure this is correctly assigned
+      role_id: formData.role, // Ensure this is correctly assigned
+    };
+
+    try {
+      const endpoint = `${
+        import.meta.env.VITE_BACKEND_URL
+      }/execute-query/create-dashboard`;
+
+      // Use apiRequest for consistency
+      const data = await apiRequest("POST", endpoint, payload);
+
+      setDashboardId(data.dashboard_id);
+      localStorage.setItem("current-dashboard-id", data.dashboard_id);
+      console.log("Dashboard created! ID: " + data.dashboard_id);
+
+      return data.dashboard_id;
+    } catch (error) {
+      console.error("Failed to create dashboard:", error.message || error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   //patch for role and domain
   const handleFinalSubmit = async (e) => {
     e.preventDefault();
@@ -115,6 +144,7 @@ function Database() {
     }
 
     try {
+      // First, update the DB entry with domain and API key
       await apiRequest(
         "PATCH",
         `${import.meta.env.VITE_BACKEND_URL}/external-db`,
@@ -125,14 +155,22 @@ function Database() {
           db_entry_id: dbEntryId,
         }
       );
+
       console.log(
         "Setup completed, fetching queries for dbEntryId:",
         dbEntryId
       );
+
+      // Store role in localStorage
       localStorage.setItem("user-role", formData.role);
-      console.log(dbEntryId);
-      await fetchQueryTitles(dbEntryId);
       localStorage.setItem("current-db-entry-id", dbEntryId);
+
+      // Create or get dashboard first
+      await createOrGetDashboard();
+
+      // Then fetch query titles
+      await fetchQueryTitles(dbEntryId);
+
       alert("Setup Completed!");
       navigate("/Dashboard");
     } catch (error) {
@@ -142,6 +180,66 @@ function Database() {
       setLoading(false);
     }
   };
+
+  const fetchUserDashboards = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const roleId = localStorage.getItem("user-role");
+      if (!roleId) {
+        throw new Error("Role ID is required to fetch dashboards.");
+      }
+
+      const response = await apiRequest(
+        "GET",
+        `${import.meta.env.VITE_BACKEND_URL}/execute-query/dashboards`,
+        null,
+        {
+          role_id: roleId,
+        }
+      );
+
+      if (response && Array.isArray(response)) {
+        // Transform backend data to match our frontend format if needed
+        const formattedDashboards = response.map((dashboard) => ({
+          id: dashboard.id,
+          name: dashboard.name,
+          isActive:
+            dashboard.id ===
+            (dashboards.find((d) => d.isActive)?.id || response[0].id),
+        }));
+
+        // Make sure at least one dashboard is active
+        if (
+          !formattedDashboards.some((d) => d.isActive) &&
+          formattedDashboards.length > 0
+        ) {
+          formattedDashboards[0].isActive = true;
+        }
+
+        setDashboards(formattedDashboards);
+      } else {
+        // If no dashboards returned, create a default one
+        setDashboards([
+          { id: "default", name: "Main Dashboard", isActive: true },
+        ]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch dashboards:", error);
+      setError(error.message || "Failed to fetch dashboards");
+
+      // Fallback to default dashboard if fetch fails
+      if (dashboards.length === 0) {
+        setDashboards([
+          { id: "default", name: "Main Dashboard", isActive: true },
+        ]);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">

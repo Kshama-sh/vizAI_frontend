@@ -9,8 +9,10 @@ const useQueryStore = create(
       selectedQuery: null,
       queryResult: null,
       dashboardQueries: [],
-      dashboards: [{ id: "default", name: "Main Dashboard" }],
-      activeDashboardId: "default",
+      dashboards: [],
+      activeDashboardId: null,
+      isLoadingDashboards: false,
+      dashboardError: null,
 
       //fetch the query
       fetchQueryTitles: async (dbEntryId) => {
@@ -71,7 +73,6 @@ const useQueryStore = create(
           console.error("Error: Missing dbEntryId");
           return;
         }
-        //const dbEntryId = localStorage.getItem("current-db-entry-id");
         try {
           const url = `${
             import.meta.env.VITE_BACKEND_URL
@@ -156,7 +157,6 @@ const useQueryStore = create(
         }
       },
 
-      // Add to queryStore.js
       updateQueriesWithDateRange: async (queryIds, startDate, endDate) => {
         try {
           set({ isUpdatingQueries: true });
@@ -198,37 +198,6 @@ const useQueryStore = create(
       },
 
       setSelectedQuery: (query) => set({ selectedQuery: query }),
-
-      // Dashboard management
-      addDashboard: (name) => {
-        const dashboardId = `dashboard-${Date.now()}`;
-        set((state) => ({
-          dashboards: [...state.dashboards, { id: dashboardId, name }],
-        }));
-        return dashboardId;
-      },
-      //remove dashboard
-      removeDashboard: (dashboardId) => {
-        set((state) => {
-          // Don't remove default dashboard
-          if (dashboardId === "default") return state;
-
-          // If removing active dashboard, set default as active
-          const newState = {
-            dashboards: state.dashboards.filter((d) => d.id !== dashboardId),
-          };
-
-          if (state.activeDashboardId === dashboardId) {
-            newState.activeDashboardId = "default";
-          }
-
-          return newState;
-        });
-      },
-
-      setActiveDashboard: (dashboardId) => {
-        set({ activeDashboardId: dashboardId });
-      },
 
       // Query visualization management
       addToDashboard: (query, dashboardId = null) => {

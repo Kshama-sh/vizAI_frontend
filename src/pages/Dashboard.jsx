@@ -6,18 +6,28 @@ import { Label } from "@/components/ui/label";
 import { PlusCircle, X, ChevronLeft, ChevronRight } from "lucide-react";
 import useQueryStore from "@/store/queryStore";
 import DynamicChart from "../components/static/DynamicChart";
+import { apiRequest } from "@/api/access_token";
 
 function Dashboard() {
   const { dashboardQueries, removeFromDashboard } = useQueryStore();
   const [hoveredCard, setHoveredCard] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [dashboards, setDashboards] = useState([
-    { id: 1, name: "Main Dashboard", isActive: true },
-    { id: 2, name: "Dashboad 2", isActive: false },
-  ]);
+  const [dashboards, setDashboards] = useState([]);
   const [newDashboardName, setNewDashboardName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [dbEntryId, setDbEntryId] = useState(null);
+  const [dashboardId, setDashboardId] = useState(null);
 
-  // Load dashboards from localStorage on component mount
+  // Fetch dashboards from backend when sidebar is opened
+  useEffect(() => {
+    if (sidebarOpen) {
+      fetchUserDashboards();
+    }
+  }, [sidebarOpen]);
+
+  // Load dashboards from localStorage on component mount if there are any
   useEffect(() => {
     const savedDashboards = localStorage.getItem("dashboards");
     if (savedDashboards) {
@@ -27,55 +37,215 @@ function Dashboard() {
 
   // Save dashboards to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem("dashboards", JSON.stringify(dashboards));
+    if (dashboards.length > 0) {
+      localStorage.setItem("dashboards", JSON.stringify(dashboards));
+    }
   }, [dashboards]);
 
-  const handleCreateDashboard = () => {
-    if (newDashboardName.trim()) {
-      // Deactivate all current dashboards
-      const updatedDashboards = dashboards.map((dashboard) => ({
-        ...dashboard,
-        isActive: false,
-      }));
+  const fetchUserDashboards = async () => {
+    setIsLoading(true);
+    setError(null);
 
-      // Add new dashboard as active
+    try {
+      const roleId = localStorage.getItem("user-role");
+      if (!roleId) {
+        throw new Error("Role ID is required to fetch dashboards.");
+      }
+
+      const response = await apiRequest(
+        "GET",
+        `${import.meta.env.VITE_BACKEND_URL}/execute-query/dashboards`,
+        null,
+        {
+          role_id: roleId,
+        }
+      );
+
+      if (response && Array.isArray(response)) {
+        // Transform backend data to match our frontend format if needed
+        const formattedDashboards = response.map((dashboard) => ({
+          id: dashboard.id,
+          name: dashboard.name,
+          isActive:
+            dashboard.id ===
+            (dashboards.find((d) => d.isActive)?.id || response[0].id),
+        }));
+
+        // Make sure at least one dashboard is active
+        if (
+          !formattedDashboards.some((d) => d.isActive) &&
+          formattedDashboards.length > 0
+        ) {
+          formattedDashboards[0].isActive = true;
+        }
+
+        setDashboards(formattedDashboards);
+      } else {
+        // If no dashboards returned, create a default one
+        setDashboards([
+          { id: "default", name: "Main Dashboard", isActive: true },
+        ]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch dashboards:", error);
+      setError(error.message || "Failed to fetch dashboards");
+
+      // Fallback to default dashboard if fetch fails
+      if (dashboards.length === 0) {
+        setDashboards([
+          { id: "default", name: "Main Dashboard", isActive: true },
+        ]);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // const createOrGetDashboard = async () => {
+  //   setLoading(true);
+
+  //   try {
+  //     const roleId = localStorage.getItem("user-role");
+  //     const dbEntryId = localStorage.getItem("current-db-entry-id");
+  //     if (!roleId) {
+  //       throw new Error("User role is missing.");
+  //     }
+
+  //     if (!dbEntryId) {
+  //       throw new Error("Database entry ID is missing.");
+  //     }
+
+  //     const payload = {
+  //       db_entry_id: dbEntryId,
+  //       role_id: roleId,
+  //     };
+
+  //     console.log("Sending payload:", payload);
+
+  //     const endpoint = `${
+  //       import.meta.env.VITE_BACKEND_URL
+  //     }/execute-query/create-dashboard`;
+  //     console.log("API Endpoint:", endpoint);
+
+  //     const data = await apiRequest("POST", endpoint, payload);
+  //     console.log("Dashboard API Response:", data);
+
+  //     if (!data.dashboard_id) {
+  //       throw new Error("Dashboard ID missing in response");
+  //     }
+
+  //     setDashboardId(data.dashboard_id);
+  //     localStorage.setItem("current-dashboard-id", data.dashboard_id);
+  //     console.log("Dashboard created! ID: " + data.dashboard_id);
+
+  //     return data.dashboard_id;
+  //   } catch (error) {
+  //     console.error("Failed to create dashboard:", error.message || error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const createOrGetDashboard = async () => {
+    setLoading(true);
+
+    try {
+      const roleId = localStorage.getItem("user-role");
+      const dbEntryId = localStorage.getItem("current-db-entry-id");
+      if (!roleId) {
+        throw new Error("User role is missing.");
+      }
+
+      if (!dbEntryId) {
+        throw new Error("Database entry ID is missing.");
+      }
+
+      const payload = {
+        db_entry_id: dbEntryId,
+        role_id: roleId,
+        name: newDashboardName,
+      };
+
+      console.log("Sending payload:", payload);
+
+      const endpoint = `${
+        import.meta.env.VITE_BACKEND_URL
+      }/execute-query/create-dashboard`;
+      console.log("API Endpoint:", endpoint);
+
+      const data = await apiRequest("POST", endpoint, payload);
+      console.log("Dashboard API Response:", data);
+
+      if (!data.dashboard_id) {
+        throw new Error("Dashboard ID missing in response");
+      }
+
       const newDashboard = {
-        id: Date.now(),
-        name: newDashboardName.trim(),
+        id: data.dashboard_id,
+        name: newDashboardName || `Dashboard ${dashboards.length + 1}`,
         isActive: true,
       };
 
-      setDashboards([...updatedDashboards, newDashboard]);
+      console.log(newDashboard);
+
+      setDashboards((prevDashboards) => {
+        const updatedDashboards = prevDashboards.map((dashboard) => ({
+          ...dashboard,
+          isActive: false,
+        }));
+        return [...updatedDashboards, newDashboard];
+      });
+
+      setDashboardId(data.dashboard_id);
+      localStorage.setItem("current-dashboard-id", data.dashboard_id);
       setNewDashboardName("");
+      console.log("Dashboard created and added to sidebar!");
+    } catch (error) {
+      console.error("Failed to create dashboard:", error.message || error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const switchDashboard = (id) => {
-    const updatedDashboards = dashboards.map((dashboard) => ({
-      ...dashboard,
-      isActive: dashboard.id === id,
-    }));
-    setDashboards(updatedDashboards);
+  const switchDashboard = async (id) => {
+    try {
+      const updatedDashboards = dashboards.map((dashboard) => ({
+        ...dashboard,
+        isActive: dashboard.id === id,
+      }));
+      setDashboards(updatedDashboards);
+    } catch (error) {
+      console.error("Failed to switch dashboard:", error);
+      setError(error.message || "Failed to switch dashboard");
+    }
   };
 
-  const deleteDashboard = (id) => {
+  const deleteDashboard = async (id) => {
     if (dashboards.length <= 1) return;
 
-    const filteredDashboards = dashboards.filter(
-      (dashboard) => dashboard.id !== id
-    );
+    try {
+      await apiRequest("DELETE", `/dashboards/${id}`);
 
-    if (
-      dashboards.find((d) => d.id === id)?.isActive &&
-      filteredDashboards.length > 0
-    ) {
-      filteredDashboards[0].isActive = true;
+      const filteredDashboards = dashboards.filter(
+        (dashboard) => dashboard.id !== id
+      );
+
+      if (
+        dashboards.find((d) => d.id === id)?.isActive &&
+        filteredDashboards.length > 0
+      ) {
+        filteredDashboards[0].isActive = true;
+      }
+
+      setDashboards(filteredDashboards);
+    } catch (error) {
+      console.error("Failed to delete dashboard:", error);
+      setError(error.message || "Failed to delete dashboard");
     }
-
-    setDashboards(filteredDashboards);
   };
-  const activeDashboard = dashboards.find((d) => d.isActive) || dashboards[0];
-  console.log("Dashboard Queries:", dashboardQueries);
+
+  const activeDashboard = dashboards.find((d) => d.isActive) ||
+    dashboards[0] || { name: "Dashboard" };
 
   return (
     <div>
@@ -106,7 +276,6 @@ function Dashboard() {
           {sidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
         </Button>
 
-        {/* Sidebar */}
         <div
           className={`w-64 bg-gray-100 p-4 transition-all duration-300 ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -124,6 +293,11 @@ function Dashboard() {
           </div>
 
           <div className="space-y-4">
+            {isLoading && (
+              <div className="text-center py-2">Loading dashboards...</div>
+            )}
+            {error && <div className="text-red-500 py-2">{error}</div>}
+
             {/* Dashboard List */}
             <div className="space-y-2">
               {dashboards.map((dashboard) => (
@@ -134,7 +308,7 @@ function Dashboard() {
                       ? "bg-blue-100 border-l-4 border-[#230C33]"
                       : "hover:bg-gray-200"
                   }`}
-                  onClick={() => switchDashboard(dashboard.id)}
+                  onClick={() => handleSwitchDashboard(dashboard.id)}
                 >
                   <span className="truncate">{dashboard.name}</span>
                   {dashboards.length > 1 && (
@@ -143,7 +317,7 @@ function Dashboard() {
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
-                        deleteDashboard(dashboard.id);
+                        handleDeleteDashboard(dashboard.id);
                       }}
                       className="opacity-70 hover:opacity-100"
                     >
@@ -153,8 +327,6 @@ function Dashboard() {
                 </div>
               ))}
             </div>
-
-            {/* add new dashboard */}
             <div className="pt-4 border-t">
               <Label htmlFor="dashboard-name">Create New Dashboard</Label>
               <div className="flex mt-2">
@@ -165,7 +337,7 @@ function Dashboard() {
                   placeholder="Dashboard name"
                   className="mr-2"
                 />
-                <Button onClick={handleCreateDashboard} size="sm">
+                <Button onClick={createOrGetDashboard} size="sm">
                   <PlusCircle size={16} />
                 </Button>
               </div>
@@ -227,5 +399,4 @@ function Dashboard() {
     </div>
   );
 }
-
 export default Dashboard;
