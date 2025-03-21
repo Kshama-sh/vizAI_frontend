@@ -68,13 +68,13 @@ function Database() {
             user: formData.user,
             password: formData.password,
             role: String(formData.role),
-            project_id: 1,
+            project_id: "57f299e8-67e9-44b1-b4fe-9b3a7b847a0c",
           }
         : {
             db_type: formData.dbType.toLowerCase(),
             connection_string: formData.connection_string,
             role: String(formData.role),
-            project_id: 1,
+            project_id: "57f299e8-67e9-44b1-b4fe-9b3a7b847a0c",
           };
     console.log("Final Payload:", JSON.stringify(payload, null, 2));
 
@@ -120,7 +120,7 @@ function Database() {
         `${import.meta.env.VITE_BACKEND_URL}/external-db`,
         {
           domain: formData.domain,
-          project_id: 1,
+          project_id: "57f299e8-67e9-44b1-b4fe-9b3a7b847a0c",
           apikey: formData.apikey,
           db_entry_id: dbEntryId,
         }
@@ -129,6 +129,8 @@ function Database() {
         "Setup completed, fetching queries for dbEntryId:",
         dbEntryId
       );
+      localStorage.setItem("user-role", formData.role);
+      console.log(dbEntryId);
       await fetchQueryTitles(dbEntryId);
       localStorage.setItem("current-db-entry-id", dbEntryId);
       alert("Setup Completed!");
@@ -181,7 +183,7 @@ function Database() {
                     <SelectContent>
                       <SelectItem value="mysql">MySQL</SelectItem>
                       <SelectItem value="postgres">Postgres</SelectItem>
-                      <SelectItem value="sqlite">SQLite</SelectItem>
+                      {/* <SelectItem value="sqlite">SQLite</SelectItem> */}
                     </SelectContent>
                   </Select>
                 </div>
@@ -242,9 +244,15 @@ function Database() {
                       <SelectValue placeholder="Select your Role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="3">Admin</SelectItem>
-                      <SelectItem value="2">Finance</SelectItem>
-                      <SelectItem value="1">Product</SelectItem>
+                      <SelectItem value="13ef4ebe-00c4-48b1-a7bb-ad0edf7368aa">
+                        Admin
+                      </SelectItem>
+                      <SelectItem value="f01cc98b-c0f8-4d34-83f5-66e75e0c16ef">
+                        Finance
+                      </SelectItem>
+                      <SelectItem value="d8cf4d90-70ff-4fb5-b93f-8e6accc8056d">
+                        Product
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -259,7 +267,7 @@ function Database() {
                     <SelectContent>
                       <SelectItem value="mysql">MySQL</SelectItem>
                       <SelectItem value="postgres">Postgres</SelectItem>
-                      <SelectItem value="sqlite">SQLite</SelectItem>
+                      {/* <SelectItem value="sqlite">SQLite</SelectItem> */}
                     </SelectContent>
                   </Select>
                 </div>
@@ -280,9 +288,15 @@ function Database() {
                       <SelectValue placeholder="Select your Role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="3">Admin</SelectItem>
-                      <SelectItem value="2">Finance</SelectItem>
-                      <SelectItem value="1">Product</SelectItem>
+                      <SelectItem value="13ef4ebe-00c4-48b1-a7bb-ad0edf7368aa">
+                        Admin
+                      </SelectItem>
+                      <SelectItem value="f01cc98b-c0f8-4d34-83f5-66e75e0c16ef">
+                        Finance
+                      </SelectItem>
+                      <SelectItem value="d8cf4d90-70ff-4fb5-b93f-8e6accc8056d">
+                        Product
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -64,20 +64,62 @@ const useQueryStore = create(
         }
       },
 
+      loadMoreQueries: async (dbEntryId) => {
+        set({ isLoading: true });
+        console.log(" Fetching next 10 queries for DB ID:", dbEntryId);
+        if (!dbEntryId) {
+          console.error("Error: Missing dbEntryId");
+          return;
+        }
+        //const dbEntryId = localStorage.getItem("current-db-entry-id");
+        try {
+          const url = `${
+            import.meta.env.VITE_BACKEND_URL
+          }/execute-query/load-more/?external_db_id=${dbEntryId}`;
+
+          const response = await apiRequest("GET", url);
+          console.log("Load more response:", response);
+
+          if (
+            !response ||
+            !response.queries_list ||
+            response.queries_list.length === 0
+          ) {
+            set({ hasMore: false }); // No more queries to load
+            return;
+          }
+
+          const newQueries = response.queries_list;
+
+          // Replace the existing queries with the new ones
+          set((state) => ({
+            queries: {
+              ...state.queries,
+              queries_list: newQueries, // Replace old queries with new ones
+            },
+          }));
+        } catch (error) {
+          console.error("Error loading more queries:", error);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
       //fetch the result of the query
       executeQuery: async (queryId) => {
         console.log("Executing query ID:", queryId);
 
         try {
-          const query = get().queries.find((q) => q.id === queryId);
+          const query = get().queries.queries_list.find(
+            (q) => q.id === queryId
+          );
           if (!query) {
             console.error("Query not found:", queryId);
             return null;
           }
 
-          const dbEntryId = localStorage.getItem("current-db-entry-id") || "34";
+          const dbEntryId = localStorage.getItem("current-db-entry-id");
 
-          //const url = `http://192.168.94.112:8000/execute-query/`;
           const url = `${import.meta.env.VITE_BACKEND_URL}/execute-query/`;
 
           const requestBody = { query_id: queryId, external_db_id: dbEntryId };

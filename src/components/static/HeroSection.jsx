@@ -53,7 +53,7 @@ const HeroSection = () => {
             data sources.
           </h1>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl mx-auto p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6 max-w-4xl mx-auto p-4">
           <Card className="shadow-lg hover:shadow-xl transition-shadow rounded-2xl bg-[#230C33]">
             <CardContent className="flex items-center justify-center h-36">
               <img
@@ -74,7 +74,7 @@ const HeroSection = () => {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg hover:shadow-xl transition-shadow rounded-2xl bg-[#230C33]">
+          {/* <Card className="shadow-lg hover:shadow-xl transition-shadow rounded-2xl bg-[#230C33]">
             <CardContent className="flex items-center justify-center h-36">
               <img
                 src="src/assets/sqlite-logo.png"
@@ -82,7 +82,7 @@ const HeroSection = () => {
                 className="max-h-full object-contain"
               />
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </section>
     </main>

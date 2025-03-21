@@ -28,7 +28,7 @@ const DynamicChart = ({ data = [], chartType = "bar" }) => {
         toolbar: {
           show: true,
           tools: {
-            download: true, // Allow downloading as PNG/SVG
+            download: true,
             selection: true,
             zoom: true,
             zoomin: true,
