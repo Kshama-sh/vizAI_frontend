@@ -13,26 +13,55 @@ const useQueryStore = create(
       activeDashboardId: null,
       isLoadingDashboards: false,
       dashboardError: null,
+      isLoadingQueries: false,
+      hasMore: true,
+      isUpdatingQueries: false,
 
-      //fetch the query
+      fetchUserDashboards: async () => {
+        set({ isLoadingDashboards: true, dashboardError: null });
+        try {
+          const roleId = localStorage.getItem("user-role");
+          if (!roleId)
+            throw new Error("Role ID is required to fetch dashboards.");
+
+          const response = await apiRequest(
+            "GET",
+            `${import.meta.env.VITE_BACKEND_URL}/execute-query/dashboards`,
+            null,
+            { role_id: roleId }
+          );
+          const formattedDashboards = Array.isArray(response)
+            ? response.map((dashboard) => ({
+                id: dashboard.id,
+                name: dashboard.name,
+                isActive: false,
+              }))
+            : [{ id: "default", name: "Main Dashboard", isActive: true }];
+          formattedDashboards[0].isActive = true;
+          set({ dashboards: formattedDashboards });
+        } catch (error) {
+          console.error("Failed to fetch dashboards:", error);
+          set({
+            dashboardError: error.message || "Failed to fetch dashboards",
+          });
+        } finally {
+          set({ isLoadingDashboards: false });
+        }
+      },
+
       fetchQueryTitles: async (dbEntryId) => {
         console.log(" Fetching queries for DB ID:", dbEntryId);
-
         if (!dbEntryId) {
           console.error("Error: Missing dbEntryId");
           return;
         }
-
         try {
           const url = `${
             import.meta.env.VITE_BACKEND_URL
           }/execute-query/?external_db_id=${dbEntryId}`;
-
           console.log("Fetching from URL:", url);
-
           const response = await apiRequest("GET", url);
           console.log("API Response:", response);
-
           if (!response) {
             console.error(" No response received");
             throw new Error("No response received");
@@ -86,17 +115,16 @@ const useQueryStore = create(
             !response.queries_list ||
             response.queries_list.length === 0
           ) {
-            set({ hasMore: false }); // No more queries to load
+            set({ hasMore: false });
             return;
           }
 
           const newQueries = response.queries_list;
 
-          // Replace the existing queries with the new ones
           set((state) => ({
             queries: {
               ...state.queries,
-              queries_list: newQueries, // Replace old queries with new ones
+              queries_list: newQueries,
             },
           }));
         } catch (error) {
@@ -106,7 +134,56 @@ const useQueryStore = create(
         }
       },
 
-      //fetch the result of the query
+      // executeQuery: async (queryId) => {
+      //   console.log("Executing query ID:", queryId);
+
+      //   try {
+      //     const query = get().queries.queries_list.find(
+      //       (q) => q.id === queryId
+      //     );
+
+      //     if (!query) {
+      //       console.error("Query not found:", queryId);
+      //       return null;
+      //     }
+
+      //     const dbEntryId = localStorage.getItem("current-db-entry-id");
+
+      //     const url = `${import.meta.env.VITE_BACKEND_URL}/execute-query/`;
+
+      //     const requestBody = { query_id: queryId, external_db_id: dbEntryId };
+
+      //     const response = await apiRequest("POST", url, requestBody);
+      //     console.log("Query Result:", response);
+
+      //     if (!response) {
+      //       console.error("No response received");
+      //       set({ queryResult: { error: "No response received" } });
+      //       return null;
+      //     }
+
+      //     let formattedResult = {
+      //       query: response.query || query.query,
+      //       data: Array.isArray(response.result) ? response.result : [],
+      //       chartType: response.chartType || query.chartType || "line",
+      //       report: response.report || "",
+      //     };
+
+      //     if (!formattedResult.data.length) {
+      //       formattedResult.error = "Empty result set";
+      //     }
+
+      //     set({ queryResult: formattedResult });
+
+      //     return formattedResult;
+      //   } catch (error) {
+      //     console.error("Error executing query:", error);
+      //     set({
+      //       queryResult: { error: error.message || "Error executing query" },
+      //     });
+      //     return null;
+      //   }
+      // },
       executeQuery: async (queryId) => {
         console.log("Executing query ID:", queryId);
 
@@ -114,28 +191,38 @@ const useQueryStore = create(
           const query = get().queries.queries_list.find(
             (q) => q.id === queryId
           );
+
           if (!query) {
             console.error("Query not found:", queryId);
             return null;
           }
 
           const dbEntryId = localStorage.getItem("current-db-entry-id");
-
-          const url = `${import.meta.env.VITE_BACKEND_URL}/execute-query/`;
-
-          const requestBody = { query_id: queryId, external_db_id: dbEntryId };
-
-          const response = await apiRequest("POST", url, requestBody);
-          console.log("Query Result:", response);
-
-          if (!response) {
-            console.error("No response received");
-            set({ queryResult: { error: "No response received" } });
+          if (!dbEntryId) {
+            console.error("Database entry ID not found in localStorage.");
             return null;
           }
 
+          const url = `${import.meta.env.VITE_BACKEND_URL}/execute-query/`;
+          const requestBody = { query_id: queryId, external_db_id: dbEntryId };
+
+          const response = await apiRequest("POST", url, requestBody);
+
+          if (!response || response.error) {
+            console.error(
+              "Error in API response:",
+              response?.error || "Unknown error"
+            );
+            set({
+              queryResult: { error: response?.error || "API request failed" },
+            });
+            return null;
+          }
+
+          console.log("Query Result:", response);
+
           let formattedResult = {
-            query: response.query || query.query,
+            query: response.query || query.query || "No query provided",
             data: Array.isArray(response.result) ? response.result : [],
             chartType: response.chartType || query.chartType || "line",
             report: response.report || "",
@@ -199,26 +286,82 @@ const useQueryStore = create(
 
       setSelectedQuery: (query) => set({ selectedQuery: query }),
 
-      // Query visualization management
-      addToDashboard: (query, dashboardId = null) => {
-        const targetDashboard = dashboardId || get().activeDashboardId;
-
-        set((state) => {
-          // Check if the query is already in the dashboard
-          if (!state.dashboardQueries.some((q) => q.id === query.id)) {
-            return {
-              dashboardQueries: [
-                ...state.dashboardQueries,
-                {
-                  ...query,
-                  dashboardId: targetDashboard,
-                  chartType: query.chartType || "line", // Default chart type
-                },
-              ],
-            };
+      addQueriesToDashboard: async (
+        dashboardId,
+        queryIds,
+        dashboardName = null
+      ) => {
+        try {
+          if (!dashboardId || !queryIds.length) {
+            throw new Error(
+              "Dashboard ID and at least one Query ID are required."
+            );
           }
-          return state;
-        });
+
+          const payload = {
+            dashboard_id: dashboardId,
+            query_ids: Array.isArray(queryIds) ? queryIds : [queryIds],
+          };
+
+          if (dashboardName) {
+            payload.name = dashboardName;
+          }
+
+          const response = await apiRequest(
+            "PATCH",
+            `${
+              import.meta.env.VITE_BACKEND_URL
+            }/execute-query/add-queries-to-dashboard`,
+            payload
+          );
+
+          await get().fetchDashboardChartData(dashboardId);
+
+          return response;
+        } catch (error) {
+          console.error("API Error:", error);
+          set({
+            dashboardError:
+              error.message || "Failed to add queries to dashboard",
+          });
+          throw error;
+        }
+      },
+
+      fetchDashboardChartData: async (dashboardId) => {
+        try {
+          if (!dashboardId) {
+            throw new Error("Dashboard ID is required");
+          }
+
+          const response = await apiRequest(
+            "GET",
+            `${
+              import.meta.env.VITE_BACKEND_URL
+            }/execute-query/dashboard/chart-data`,
+            null,
+            {
+              dashboard_id: dashboardId,
+            }
+          );
+          console.log(response);
+          if (!response || !response.chart_data) {
+            throw new Error("Invalid chart data response");
+          }
+
+          set({
+            dashboardQueries: response.chart_data,
+            dashboardError: null,
+          });
+
+          return response.chart_data;
+        } catch (error) {
+          console.error("Failed to fetch dashboard chart data:", error);
+          set({
+            dashboardError: error.message || "Failed to fetch chart data",
+          });
+          throw error;
+        }
       },
 
       removeFromDashboard: (queryId) => {
@@ -229,7 +372,6 @@ const useQueryStore = create(
         }));
       },
 
-      // Update chart visualization type
       updateChartType: (queryId, chartType) => {
         set((state) => ({
           dashboardQueries: state.dashboardQueries.map((q) =>

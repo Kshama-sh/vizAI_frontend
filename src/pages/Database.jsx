@@ -255,7 +255,7 @@ function Database() {
     <div className="flex justify-center items-center min-h-screen">
       <Card className="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
         <h2 className="text-xl font-semibold text-center text-gray-900 mb-4">
-          {step === 1 ? "Connect Your Database" : "Setup Domain & Role"}
+          {step === 1 ? "Connect Your Database" : "Setup Domain and API Key"}
         </h2>
 
         {error && <p className="text-red-500 text-center">{error}</p>}

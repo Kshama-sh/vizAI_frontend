@@ -9,7 +9,6 @@ import DynamicChart from "../components/static/DynamicChart";
 import { apiRequest } from "@/api/access_token";
 
 function Dashboard() {
-  const { dashboardQueries, removeFromDashboard } = useQueryStore();
   const [hoveredCard, setHoveredCard] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dashboards, setDashboards] = useState([]);
@@ -17,25 +16,28 @@ function Dashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [dbEntryId, setDbEntryId] = useState(null);
-  const [dashboardId, setDashboardId] = useState(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const { dashboardQueries, fetchDashboardChartData, removeFromDashboard } =
+    useQueryStore();
 
-  // Fetch dashboards from backend when sidebar is opened
   useEffect(() => {
     if (sidebarOpen) {
       fetchUserDashboards();
     }
   }, [sidebarOpen]);
 
-  // Load dashboards from localStorage on component mount if there are any
   useEffect(() => {
     const savedDashboards = localStorage.getItem("dashboards");
     if (savedDashboards) {
       setDashboards(JSON.parse(savedDashboards));
+    } else {
+      setDashboards([
+        { id: "default", name: "Main Dashboard", isActive: true },
+      ]);
     }
   }, []);
 
-  // Save dashboards to localStorage whenever they change
   useEffect(() => {
     if (dashboards.length > 0) {
       localStorage.setItem("dashboards", JSON.stringify(dashboards));
@@ -62,7 +64,6 @@ function Dashboard() {
       );
 
       if (response && Array.isArray(response)) {
-        // Transform backend data to match our frontend format if needed
         const formattedDashboards = response.map((dashboard) => ({
           id: dashboard.id,
           name: dashboard.name,
@@ -71,7 +72,6 @@ function Dashboard() {
             (dashboards.find((d) => d.isActive)?.id || response[0].id),
         }));
 
-        // Make sure at least one dashboard is active
         if (
           !formattedDashboards.some((d) => d.isActive) &&
           formattedDashboards.length > 0
@@ -81,7 +81,6 @@ function Dashboard() {
 
         setDashboards(formattedDashboards);
       } else {
-        // If no dashboards returned, create a default one
         setDashboards([
           { id: "default", name: "Main Dashboard", isActive: true },
         ]);
@@ -90,7 +89,6 @@ function Dashboard() {
       console.error("Failed to fetch dashboards:", error);
       setError(error.message || "Failed to fetch dashboards");
 
-      // Fallback to default dashboard if fetch fails
       if (dashboards.length === 0) {
         setDashboards([
           { id: "default", name: "Main Dashboard", isActive: true },
@@ -100,51 +98,6 @@ function Dashboard() {
       setIsLoading(false);
     }
   };
-
-  // const createOrGetDashboard = async () => {
-  //   setLoading(true);
-
-  //   try {
-  //     const roleId = localStorage.getItem("user-role");
-  //     const dbEntryId = localStorage.getItem("current-db-entry-id");
-  //     if (!roleId) {
-  //       throw new Error("User role is missing.");
-  //     }
-
-  //     if (!dbEntryId) {
-  //       throw new Error("Database entry ID is missing.");
-  //     }
-
-  //     const payload = {
-  //       db_entry_id: dbEntryId,
-  //       role_id: roleId,
-  //     };
-
-  //     console.log("Sending payload:", payload);
-
-  //     const endpoint = `${
-  //       import.meta.env.VITE_BACKEND_URL
-  //     }/execute-query/create-dashboard`;
-  //     console.log("API Endpoint:", endpoint);
-
-  //     const data = await apiRequest("POST", endpoint, payload);
-  //     console.log("Dashboard API Response:", data);
-
-  //     if (!data.dashboard_id) {
-  //       throw new Error("Dashboard ID missing in response");
-  //     }
-
-  //     setDashboardId(data.dashboard_id);
-  //     localStorage.setItem("current-dashboard-id", data.dashboard_id);
-  //     console.log("Dashboard created! ID: " + data.dashboard_id);
-
-  //     return data.dashboard_id;
-  //   } catch (error) {
-  //     console.error("Failed to create dashboard:", error.message || error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   const createOrGetDashboard = async () => {
     setLoading(true);
@@ -163,7 +116,7 @@ function Dashboard() {
       const payload = {
         db_entry_id: dbEntryId,
         role_id: roleId,
-        name: newDashboardName,
+        name: newDashboardName || `Dashboard ${dashboards.length + 1}`,
       };
 
       console.log("Sending payload:", payload);
@@ -186,8 +139,6 @@ function Dashboard() {
         isActive: true,
       };
 
-      console.log(newDashboard);
-
       setDashboards((prevDashboards) => {
         const updatedDashboards = prevDashboards.map((dashboard) => ({
           ...dashboard,
@@ -196,10 +147,10 @@ function Dashboard() {
         return [...updatedDashboards, newDashboard];
       });
 
-      setDashboardId(data.dashboard_id);
       localStorage.setItem("current-dashboard-id", data.dashboard_id);
       setNewDashboardName("");
-      console.log("Dashboard created and added to sidebar!");
+
+      fetchDashboardChartData(data.dashboard_id);
     } catch (error) {
       console.error("Failed to create dashboard:", error.message || error);
     } finally {
@@ -207,24 +158,29 @@ function Dashboard() {
     }
   };
 
-  const switchDashboard = async (id) => {
+  const handleSwitchDashboard = async (id) => {
     try {
       const updatedDashboards = dashboards.map((dashboard) => ({
         ...dashboard,
         isActive: dashboard.id === id,
       }));
       setDashboards(updatedDashboards);
+
+      fetchDashboardChartData(id);
     } catch (error) {
       console.error("Failed to switch dashboard:", error);
       setError(error.message || "Failed to switch dashboard");
     }
   };
 
-  const deleteDashboard = async (id) => {
+  const handleDeleteDashboard = async (id) => {
     if (dashboards.length <= 1) return;
 
     try {
-      await apiRequest("DELETE", `/dashboards/${id}`);
+      await apiRequest(
+        "DELETE",
+        `${import.meta.env.VITE_BACKEND_URL}/execute-query/dashboards/${id}`
+      );
 
       const filteredDashboards = dashboards.filter(
         (dashboard) => dashboard.id !== id
@@ -235,6 +191,7 @@ function Dashboard() {
         filteredDashboards.length > 0
       ) {
         filteredDashboards[0].isActive = true;
+        fetchDashboardChartData(filteredDashboards[0].id);
       }
 
       setDashboards(filteredDashboards);
@@ -247,6 +204,18 @@ function Dashboard() {
   const activeDashboard = dashboards.find((d) => d.isActive) ||
     dashboards[0] || { name: "Dashboard" };
 
+  useEffect(() => {
+    if (activeDashboard && activeDashboard.id) {
+      fetchDashboardChartData(activeDashboard.id);
+    }
+  }, [activeDashboard, fetchDashboardChartData]);
+
+  const handleDateRangeApply = () => {
+    if (activeDashboard && activeDashboard.id) {
+      fetchDashboardChartData(activeDashboard.id, startDate, endDate);
+    }
+  };
+
   return (
     <div>
       <div className="flex gap-4 items-end mb-6 justify-center mt-4">
@@ -256,6 +225,8 @@ function Dashboard() {
             type="month"
             className="border p-2 rounded"
             placeholder="Start Date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
           />
         </div>
         <div>
@@ -264,9 +235,11 @@ function Dashboard() {
             type="month"
             className="border p-2 rounded"
             placeholder="End Date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
           />
         </div>
-        <Button>Apply Date Range</Button>
+        <Button onClick={handleDateRangeApply}>Apply Date Range</Button>
       </div>
       <div className="flex h-screen">
         <Button
@@ -298,7 +271,6 @@ function Dashboard() {
             )}
             {error && <div className="text-red-500 py-2">{error}</div>}
 
-            {/* Dashboard List */}
             <div className="space-y-2">
               {dashboards.map((dashboard) => (
                 <div
@@ -337,8 +309,12 @@ function Dashboard() {
                   placeholder="Dashboard name"
                   className="mr-2"
                 />
-                <Button onClick={createOrGetDashboard} size="sm">
-                  <PlusCircle size={16} />
+                <Button
+                  onClick={createOrGetDashboard}
+                  size="sm"
+                  disabled={loading}
+                >
+                  {loading ? "Creating..." : <PlusCircle size={16} />}
                 </Button>
               </div>
             </div>
@@ -355,7 +331,7 @@ function Dashboard() {
             </h1>
           </div>
 
-          {dashboardQueries.length === 0 ? (
+          {!dashboardQueries || dashboardQueries.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 bg-gray-50 rounded-lg border border-dashed border-gray-300">
               <p className="text-gray-500 mb-4">No visualizations added yet.</p>
               <Button onClick={() => (window.location.href = "/Query")}>
@@ -366,28 +342,28 @@ function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {dashboardQueries.map((query) => (
                 <Card
-                  key={query.id}
+                  key={query.query_id}
                   className="relative overflow-hidden"
-                  onMouseEnter={() => setHoveredCard(query.id)}
+                  onMouseEnter={() => setHoveredCard(query.query_id)}
                   onMouseLeave={() => setHoveredCard(null)}
                 >
-                  {hoveredCard === query.id && (
+                  {hoveredCard === query.query_id && (
                     <Button
                       variant="destructive"
                       size="sm"
                       className="absolute top-2 right-2 z-10"
-                      onClick={() => removeFromDashboard(query.id)}
+                      onClick={() => removeFromDashboard(query.query_id)}
                     >
                       <X size={16} />
                     </Button>
                   )}
                   <CardHeader className="font-medium pb-2">
-                    {query.title || query.explanation || "Visualization"}
+                    {query.query_text || "Visualization"}
                   </CardHeader>
                   <CardContent>
                     <DynamicChart
-                      data={query.data}
-                      chartType={query.chartType}
+                      data={query.result}
+                      chartType={query.chart_type?.toLowerCase() || "bar"}
                     />
                   </CardContent>
                 </Card>
