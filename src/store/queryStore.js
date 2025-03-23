@@ -17,6 +17,8 @@ const useQueryStore = create(
       hasMore: true,
       isUpdatingQueries: false,
 
+      clearDashboardQueries: () => set({ dashboardQueries: [] }),
+
       fetchUserDashboards: async () => {
         set({ isLoadingDashboards: true, dashboardError: null });
         try {
@@ -134,56 +136,6 @@ const useQueryStore = create(
         }
       },
 
-      // executeQuery: async (queryId) => {
-      //   console.log("Executing query ID:", queryId);
-
-      //   try {
-      //     const query = get().queries.queries_list.find(
-      //       (q) => q.id === queryId
-      //     );
-
-      //     if (!query) {
-      //       console.error("Query not found:", queryId);
-      //       return null;
-      //     }
-
-      //     const dbEntryId = localStorage.getItem("current-db-entry-id");
-
-      //     const url = `${import.meta.env.VITE_BACKEND_URL}/execute-query/`;
-
-      //     const requestBody = { query_id: queryId, external_db_id: dbEntryId };
-
-      //     const response = await apiRequest("POST", url, requestBody);
-      //     console.log("Query Result:", response);
-
-      //     if (!response) {
-      //       console.error("No response received");
-      //       set({ queryResult: { error: "No response received" } });
-      //       return null;
-      //     }
-
-      //     let formattedResult = {
-      //       query: response.query || query.query,
-      //       data: Array.isArray(response.result) ? response.result : [],
-      //       chartType: response.chartType || query.chartType || "line",
-      //       report: response.report || "",
-      //     };
-
-      //     if (!formattedResult.data.length) {
-      //       formattedResult.error = "Empty result set";
-      //     }
-
-      //     set({ queryResult: formattedResult });
-
-      //     return formattedResult;
-      //   } catch (error) {
-      //     console.error("Error executing query:", error);
-      //     set({
-      //       queryResult: { error: error.message || "Error executing query" },
-      //     });
-      //     return null;
-      //   }
-      // },
       executeQuery: async (queryId) => {
         console.log("Executing query ID:", queryId);
 
@@ -275,7 +227,6 @@ const useQueryStore = create(
             batchQueryResults: results,
             isUpdatingQueries: false,
           });
-
           return results;
         } catch (error) {
           console.error("Error updating queries with date range:", error);
@@ -302,11 +253,9 @@ const useQueryStore = create(
             dashboard_id: dashboardId,
             query_ids: Array.isArray(queryIds) ? queryIds : [queryIds],
           };
-
           if (dashboardName) {
             payload.name = dashboardName;
           }
-
           const response = await apiRequest(
             "PATCH",
             `${
@@ -314,9 +263,7 @@ const useQueryStore = create(
             }/execute-query/add-queries-to-dashboard`,
             payload
           );
-
           await get().fetchDashboardChartData(dashboardId);
-
           return response;
         } catch (error) {
           console.error("API Error:", error);
@@ -333,7 +280,7 @@ const useQueryStore = create(
           if (!dashboardId) {
             throw new Error("Dashboard ID is required");
           }
-
+          set({ dashboardQueries: [] });
           const response = await apiRequest(
             "GET",
             `${
@@ -348,36 +295,46 @@ const useQueryStore = create(
           if (!response || !response.chart_data) {
             throw new Error("Invalid chart data response");
           }
-
           set({
             dashboardQueries: response.chart_data,
             dashboardError: null,
           });
-
           return response.chart_data;
         } catch (error) {
           console.error("Failed to fetch dashboard chart data:", error);
           set({
             dashboardError: error.message || "Failed to fetch chart data",
+            dashboardQueries: [],
           });
           throw error;
         }
       },
 
-      removeFromDashboard: (queryId) => {
-        set((state) => ({
-          dashboardQueries: state.dashboardQueries.filter(
-            (q) => q.id !== queryId
-          ),
-        }));
-      },
+      removeQueriesFromDashboard: async (dashboardId, queryIds) => {
+        try {
+          if (!dashboardId || !queryIds.length) {
+            throw new Error(
+              "Dashboard ID and at least one Query ID are required"
+            );
+          }
 
-      updateChartType: (queryId, chartType) => {
-        set((state) => ({
-          dashboardQueries: state.dashboardQueries.map((q) =>
-            q.id === queryId ? { ...q, chartType } : q
-          ),
-        }));
+          const payload = {
+            dashboard_id: dashboardId,
+            query_ids: Array.isArray(queryIds) ? queryIds : [queryIds],
+          };
+
+          const response = await apiRequest(
+            "DELETE",
+            `${
+              import.meta.env.VITE_BACKEND_URL
+            }/execute-query/dashboard/delete-queries`,
+            payload
+          );
+          return response;
+        } catch (error) {
+          console.error("Failed to remove queries from dashboard:", error);
+          throw error;
+        }
       },
     }),
     {

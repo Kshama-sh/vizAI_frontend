@@ -167,63 +167,20 @@ function Query() {
     }
   };
 
-  // const handleSend = async () => {
-  //   if (!message.trim()) {
-  //     console.warn("handleSend: Message is empty, skipping request.");
-  //     return;
-  //   }
-  //   try {
-  //     setLoading(true);
-  //     const payload = {
-  //       nl_query: message,
-  //     };
-  //     console.log("Sending request with payload:", payload);
-  //     const res = await apiRequest(
-  //       "POST",
-  //       `${import.meta.env.VITE_BACKEND_URL}/external-db/nl-to-sql`,
-  //       payload
-  //     );
-  //     console.log("handleSend: Response received from backend:", res);
-  //     if (res && res.save_status && res.save_status.query_id) {
-  //       const queryId = res.save_status.query_id;
-  //       const tempQuery = {
-  //         id: queryId,
-  //         explanation: res.sql_query.explanation,
-  //         chart_type: res.sql_query.chart_type,
-  //         query: res.sql_query.sql_query,
-  //       };
-  //       setSelectedQueryState(tempQuery);
-  //       setSelectedQuery(tempQuery);
-  //       await executeQuery(queryId);
-  //       setIsDialogOpen(true);
-  //     } else {
-  //       console.warn("No query ID received in response");
-  //     }
-  //   } catch (error) {
-  //     console.error("handleSend: Error sending message:", error);
-  //   } finally {
-  //     setLoading(false);
-  //     setMessage("");
-  //   }
-  // };
   const handleSend = async () => {
     if (!message.trim()) {
       console.warn("handleSend: Message is empty, skipping request.");
       return;
     }
-
     try {
       setLoading(true);
-
       const payload = { nl_query: message };
       console.log("Sending request with payload:", payload);
-
       const res = await apiRequest(
         "POST",
         `${import.meta.env.VITE_BACKEND_URL}/external-db/nl-to-sql`,
         payload
       );
-
       if (
         !res ||
         !res.save_status ||
@@ -233,21 +190,16 @@ function Query() {
         console.warn("Invalid response received from backend:", res);
         return;
       }
-
       console.log("handleSend: Response received from backend:", res);
-
       const queryId = res.save_status.query_id;
-
       const tempQuery = {
         id: queryId,
         explanation: res.sql_query.explanation || "No explanation provided",
         chart_type: res.sql_query.chart_type || "bar",
         query: res.sql_query.sql_query || "",
       };
-
       setSelectedQueryState(tempQuery);
       setSelectedQuery(tempQuery);
-
       await executeQuery(queryId);
       setIsDialogOpen(true);
     } catch (error) {
@@ -257,18 +209,6 @@ function Query() {
       setMessage("");
     }
   };
-
-  // if (loading) {
-  //   return (
-  //     <div className="flex flex-col items-center justify-center min-h-screen">
-  //       <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-  //       <p className="mt-4 text-lg font-semibold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent animate-pulse">
-  //         Loading queries...
-  //       </p>
-  //     </div>
-  //   );
-  // }
-
   if (error) {
     return (
       <div className="p-6 flex flex-col items-center">
@@ -342,7 +282,6 @@ function Query() {
           ))}
         </div>
       )}
-
       {selectedQueries.size > 0 && (
         <div className="mt-4 flex items-center gap-2">
           {dashboards.length > 0 ? (
@@ -362,7 +301,6 @@ function Query() {
                   ))}
                 </SelectContent>
               </Select>
-
               <Button
                 onClick={handleAddToDashboard}
                 className="bg-green-500 text-white"
@@ -385,7 +323,6 @@ function Query() {
           )}
         </div>
       )}
-
       <div className="mt-3 w-full max-w-md flex justify-center p-2 bg">
         <Button
           className="w-full bg-[#2D1242]"
@@ -408,7 +345,6 @@ function Query() {
           </DialogContent>
         </Dialog>
       </div>
-
       <div className="mt-3 flex flex-col space-x-3 w-full p-4 rounded-2xl shadow-lg border gap-0.5">
         <Label htmlFor="chat" className="font-bold text-gray-400">
           Chat
@@ -460,8 +396,6 @@ function Query() {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Error Dialog */}
       <Dialog open={isErrorDialogOpen} onOpenChange={setIsErrorDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -474,5 +408,4 @@ function Query() {
     </div>
   );
 }
-
 export default Query;
