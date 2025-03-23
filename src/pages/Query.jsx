@@ -20,51 +20,70 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
 import DynamicChart from "@/components/static/DynamicChart";
 import { apiRequest } from "../api/access_token";
-
 import getChartThumbnail from "../utils/chartThumbnails";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 function Query() {
   const {
     fetchQueryTitles,
     executeQuery,
     queryResult,
     setSelectedQuery,
-    addToDashboard,
     queries,
-    fetchAllQueriesChartData,
-    queriesWithChartData,
-    isLoadingChartData,
+    loadMoreQueries,
+    dashboards,
+    addQueriesToDashboard,
+    fetchUserDashboards,
   } = useQueryStore();
 
   const [selectedQueries, setSelectedQueries] = useState(new Set());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [dateRange, setDateRange] = useState({
-    startDate: "",
-    endDate: "",
-  });
+  const [loadCount, setLoadCount] = useState(0);
   const navigate = useNavigate();
+  const [query, setQueries] = useState(["Query 1", "Query 2", "Query 3"]);
   const [selectedQuery, setSelectedQueryState] = useState(null);
   const [message, setMessage] = useState("");
-  const [response, setResponse] = useState("");
+  const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
+  const [selectedDashboardId, setSelectedDashboardId] = useState("");
+  const [addingToDashboard, setAddingToDashboard] = useState(false);
+
+  useEffect(() => {
+    fetchUserDashboards();
+  }, []);
+
+  useEffect(() => {
+    if (dashboards.length > 0 && !selectedDashboardId) {
+      setSelectedDashboardId(dashboards[0].id);
+    }
+  }, [dashboards]);
 
   useEffect(() => {
     const loadQueries = async () => {
       try {
         setLoading(true);
         const savedDbEntryId = localStorage.getItem("current-db-entry-id");
-
         if (savedDbEntryId) {
           console.log(
             " Using saved dbEntryId from localStorage:",
             savedDbEntryId
           );
-          await fetchQueryTitles(parseInt(savedDbEntryId));
-        } else if (queries.length === 0) {
+          await fetchQueryTitles(savedDbEntryId);
+        } else if (queries.queries_list.length === 0) {
           console.log(" No saved dbEntryId found, using fallback ID: 34");
-          await fetchQueryTitles(34);
         } else {
-          console.log(" Queries already loaded in store:", queries.length);
+          console.log(
+            " Queries already loaded in store:",
+            queries.queries_list.length
+          );
         }
       } catch (err) {
         console.error(" Error loading queries:", err);
@@ -75,9 +94,26 @@ function Query() {
         setLoading(false);
       }
     };
-
     loadQueries();
   }, [fetchQueryTitles]);
+
+  const handleLoadMoreQueries = async () => {
+    const savedDbEntryId = localStorage.getItem("current-db-entry-id");
+    try {
+      if (!savedDbEntryId) {
+        setError(
+          "Database entry ID is missing. Please verify your database first."
+        );
+        return;
+      }
+      console.log(savedDbEntryId);
+      await loadMoreQueries(savedDbEntryId);
+    } catch (error) {
+      console.error("Error loading more queries:", error);
+      setError("Failed to load more queries.");
+      setIsErrorDialogOpen(true);
+    }
+  };
 
   const handleCheckboxChange = (queryId) => {
     setSelectedQueries((prevSelected) => {
@@ -91,35 +127,10 @@ function Query() {
     });
   };
 
-  const handleDateRangeChange = (field, value) => {
-    setDateRange((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const applyDateRange = async () => {
-    try {
-      setLoading(true);
-      const queryIds = Array.from(selectedQueries);
-      await updateQueriesWithDateRange(
-        queryIds,
-        dateRange.startDate,
-        dateRange.endDate
-      );
-    } catch (err) {
-      console.error("Error applying date range:", err);
-      setError("Failed to apply date range to queries");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handlePreview = async (query) => {
-    console.log("🔍 Previewing Query:", query);
+    console.log("Previewing Query:", query);
     setSelectedQueryState(query);
     setSelectedQuery(query);
-
     try {
       await executeQuery(query.id);
       setIsDialogOpen(true);
@@ -129,121 +140,68 @@ function Query() {
   };
 
   const handleAddToDashboard = async () => {
-    setLoading(true);
+    if (!selectedDashboardId) {
+      setError("Please select a dashboard first.");
+      setIsErrorDialogOpen(true);
+      return;
+    }
 
+    if (selectedQueries.size === 0) {
+      setError("Please select at least one query to add to dashboard.");
+      setIsErrorDialogOpen(true);
+      return;
+    }
+
+    setAddingToDashboard(true);
     try {
-      for (const queryId of selectedQueries) {
-        const query = queries.find((q) => q.id === queryId);
-        if (query) {
-          const result = await executeQuery(query.id);
-
-          if (result) {
-            addToDashboard({
-              ...query,
-              data: result.data || [],
-              chartType: result.chartType || "line",
-            });
-          }
-        }
-      }
-
+      const queryIdsArray = Array.from(selectedQueries);
+      await addQueriesToDashboard(selectedDashboardId, queryIdsArray);
       setSelectedQueries(new Set());
       navigate("/Dashboard");
     } catch (error) {
       console.error("Error adding queries to dashboard:", error);
-      setError("Failed to add queries to dashboard");
+      setError(error.message || "Failed to add queries to dashboard");
+      setIsErrorDialogOpen(true);
     } finally {
-      setLoading(false);
+      setAddingToDashboard(false);
     }
   };
 
-  //sending nl query
-  // const handleSend = async () => {
-  //   if (!message.trim()) {
-  //     console.warn("handleSend: Message is empty, skipping request.");
-  //     return;
-  //   }
-
-  //   try {
-  //     const payload = {
-  //       nl_query: message,
-  //     };
-
-  //     console.log("Sending request with payload:", payload);
-
-  //     const res = await apiRequest(
-  //       "POST",
-  //       `${import.meta.env.VITE_BACKEND_URL}/external-db/nl-to-sql`,
-  //       payload
-  //     );
-
-  //     console.log("handleSend: Response received from backend:", res);
-
-  //     if (res && res.reply) {
-  //       console.log("handleSend: Setting response:", res.reply);
-  //       setResponse(res.reply);
-  //     } else {
-  //       console.warn("handleSend: No reply received in response.");
-  //     }
-  //   } catch (error) {
-  //     console.error("handleSend: Error sending message:", error);
-  //     console.error(
-  //       "handleSend: Full error details:",
-  //       error.response?.data || error.message
-  //     );
-  //   }
-
-  //   console.log("handleSend: Clearing message input.");
-  //   setMessage("");
-  // };
   const handleSend = async () => {
     if (!message.trim()) {
       console.warn("handleSend: Message is empty, skipping request.");
       return;
     }
-
     try {
       setLoading(true);
-
-      const payload = {
-        nl_query: message,
-      };
-
+      const payload = { nl_query: message };
       console.log("Sending request with payload:", payload);
-
-      // Convert NL to SQL
       const res = await apiRequest(
         "POST",
         `${import.meta.env.VITE_BACKEND_URL}/external-db/nl-to-sql`,
         payload
       );
-
-      console.log("handleSend: Response received from backend:", res);
-
-      if (res && res.save_status && res.save_status.query_id) {
-        const queryId = res.save_status.query_id;
-
-        // Create a temporary query object
-        const tempQuery = {
-          id: queryId,
-          explanation:
-            res.sql_query.explanation || "Natural Language Query Result",
-          chart_type: res.sql_query.chart_type || "bar",
-          query: res.sql_query.sql_query || "",
-        };
-
-        // Set as selected query
-        setSelectedQueryState(tempQuery);
-        setSelectedQuery(tempQuery);
-
-        // Execute the query to get chart data
-        await executeQuery(queryId);
-
-        // Open dialog
-        setIsDialogOpen(true);
-      } else {
-        console.warn("No query ID received in response");
+      if (
+        !res ||
+        !res.save_status ||
+        !res.save_status.query_id ||
+        !res.sql_query
+      ) {
+        console.warn("Invalid response received from backend:", res);
+        return;
       }
+      console.log("handleSend: Response received from backend:", res);
+      const queryId = res.save_status.query_id;
+      const tempQuery = {
+        id: queryId,
+        explanation: res.sql_query.explanation || "No explanation provided",
+        chart_type: res.sql_query.chart_type || "bar",
+        query: res.sql_query.sql_query || "",
+      };
+      setSelectedQueryState(tempQuery);
+      setSelectedQuery(tempQuery);
+      await executeQuery(queryId);
+      setIsDialogOpen(true);
     } catch (error) {
       console.error("handleSend: Error sending message:", error);
     } finally {
@@ -251,15 +209,6 @@ function Query() {
       setMessage("");
     }
   };
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-        <p className="mt-4 text-gray-500">Loading queries...</p>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="p-6 flex flex-col items-center">
@@ -272,9 +221,23 @@ function Query() {
       </div>
     );
   }
+
+  const loadMoreQuery = () => {
+    if (loadCount >= 2) {
+      setShowDialog(true);
+      return;
+    }
+    setQueries([
+      ...query,
+      `Query ${query.length + 1}`,
+      `Query ${query.length + 2}`,
+    ]);
+    setLoadCount(loadCount + 1);
+  };
+
   return (
     <div className="p-6 flex flex-col items-center">
-      {queries.length === 0 ? (
+      {queries.queries_list.length === 0 ? (
         <div className="text-center py-10">
           <p className="text-gray-300 mb-4">
             No queries found. Check database connection.
@@ -285,10 +248,10 @@ function Query() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 w-full">
-          {queries.map((query) => (
+          {queries.queries_list.map((query) => (
             <Card
               key={query.id}
-              className="flex flex-col justify-between p-4 border hover:shadow-xl bg-accent-foreground bg-[#381952]"
+              className="flex flex-col justify-between p-4 border hover:shadow-xl bg-[#381952]"
             >
               <CardHeader className="flex flex-row justify-end">
                 <Checkbox
@@ -319,19 +282,68 @@ function Query() {
           ))}
         </div>
       )}
-
       {selectedQueries.size > 0 && (
-        <div className="mt-4">
-          <Button
-            onClick={handleAddToDashboard}
-            className="bg-green-500 text-white px-4 py-2"
-          >
-            Add to Dashboard
-          </Button>
+        <div className="mt-4 flex items-center gap-2">
+          {dashboards.length > 0 ? (
+            <>
+              <Select
+                value={selectedDashboardId}
+                onValueChange={setSelectedDashboardId}
+              >
+                <SelectTrigger className="w-48 bg-white text-black">
+                  <SelectValue placeholder="Select Dashboard" />
+                </SelectTrigger>
+                <SelectContent>
+                  {dashboards.map((dashboard) => (
+                    <SelectItem key={dashboard.id} value={dashboard.id}>
+                      {dashboard.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                onClick={handleAddToDashboard}
+                className="bg-green-500 text-white"
+                disabled={addingToDashboard || !selectedDashboardId}
+              >
+                {addingToDashboard ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  `Add to Dashboard`
+                )}
+              </Button>
+            </>
+          ) : (
+            <div className="text-yellow-500">
+              No dashboards available. Please create a dashboard first.
+            </div>
+          )}
         </div>
       )}
       <div className="mt-3 w-full max-w-md flex justify-center p-2 bg">
-        <Button className="w-full bg-[#2D1242]">Load more Queries</Button>
+        <Button
+          className="w-full bg-[#2D1242]"
+          onClick={() => {
+            handleLoadMoreQueries();
+            loadMoreQuery();
+          }}
+        >
+          Load more Queries
+        </Button>
+        <Dialog open={showDialog} onOpenChange={setShowDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>No More Queries</DialogTitle>
+            </DialogHeader>
+            <p>
+              You have reached the maximum number of queries that can be loaded.
+            </p>
+            <Button onClick={() => setShowDialog(false)}>OK</Button>
+          </DialogContent>
+        </Dialog>
       </div>
       <div className="mt-3 flex flex-col space-x-3 w-full p-4 rounded-2xl shadow-lg border gap-0.5">
         <Label htmlFor="chat" className="font-bold text-gray-400">
@@ -365,7 +377,9 @@ function Query() {
                 <div className="h-100">
                   <DynamicChart
                     data={queryResult.data}
-                    chartType={(queryResult.chartType || "line").toLowerCase()}
+                    chartType={queryResult.chartType}
+                    xAxisLabel={queryResult.x_axis}
+                    yAxisLabel={queryResult.y_axis}
                   />
                 </div>
               ) : (
@@ -382,8 +396,16 @@ function Query() {
           )}
         </DialogContent>
       </Dialog>
+      <Dialog open={isErrorDialogOpen} onOpenChange={setIsErrorDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Error</DialogTitle>
+          </DialogHeader>
+          <p>{error}</p>
+          <Button onClick={() => setIsErrorDialogOpen(false)}>Close</Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-
 export default Query;

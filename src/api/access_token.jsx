@@ -22,17 +22,15 @@ export const apiRequest = async (method, endpoint, data, params = {}) => {
     if (!accessToken) {
       throw new Error("Unauthorized: No access token found");
     }
-    //const validData = data && Object.keys(data).length ? data : {};
+
     const headers = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
-      //Accept: "application/json, text/plain, */*",
     };
 
     const response = await axios({
       method,
       url: endpoint,
-      //data: validData,
       data,
       params,
       headers,

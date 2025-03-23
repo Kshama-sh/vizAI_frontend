@@ -1,8 +1,12 @@
 import React from "react";
 import Chart from "react-apexcharts";
 
-const DynamicChart = ({ data = [], chartType = "bar" }) => {
-  console.log("Chart Data Received:", data, "Chart Type:", chartType);
+const DynamicChart = ({
+  data = [],
+  chartType = " ",
+  xAxisLabel = " ",
+  yAxisLabel = "",
+}) => {
   console.log("Chart Data Received:", data);
   if (!Array.isArray(data) || data.length === 0) {
     return (
@@ -28,7 +32,7 @@ const DynamicChart = ({ data = [], chartType = "bar" }) => {
         toolbar: {
           show: true,
           tools: {
-            download: true, // Allow downloading as PNG/SVG
+            download: true,
             selection: true,
             zoom: true,
             zoomin: true,
@@ -39,7 +43,19 @@ const DynamicChart = ({ data = [], chartType = "bar" }) => {
         },
         zoom: { enabled: true },
       },
-      xaxis: { categories: data.map((item) => item.label) },
+      xaxis: {
+        categories: data.map((item) => item.label),
+        title: {
+          text: xAxisLabel,
+          style: { fontSize: "14px", fontWeight: "bold" },
+        },
+      },
+      yaxis: {
+        title: {
+          text: yAxisLabel,
+          style: { fontSize: "14px", fontWeight: "bold" },
+        },
+      },
       colors: ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"],
       stroke: { curve: "smooth" },
       dataLabels: { enabled: true },
