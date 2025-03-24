@@ -196,19 +196,38 @@ function Query() {
         id: queryId,
         explanation: res.sql_query.explanation || "No explanation provided",
         chart_type: res.sql_query.chart_type || "bar",
-        query: res.sql_query.sql_query || "",
+        query_text: res.sql_query.sql_query || "",
+        isNlQuery: true,
+        originalQuestion: message,
       };
+      useQueryStore.setState((state) => ({
+        ...state,
+        queries: {
+          ...state.queries,
+          user_generated: state.queries.user_generated
+            ? [...state.queries.user_generated, tempQuery]
+            : [tempQuery],
+        },
+      }));
+
       setSelectedQueryState(tempQuery);
       setSelectedQuery(tempQuery);
       await executeQuery(queryId);
+      const savedDbEntryId = localStorage.getItem("current-db-entry-id");
+      if (savedDbEntryId) {
+        await fetchQueryTitles(savedDbEntryId);
+      }
       setIsDialogOpen(true);
     } catch (error) {
       console.error("handleSend: Error sending message:", error);
+      setError("Failed to process your query. Please try again.");
+      setIsErrorDialogOpen(true);
     } finally {
       setLoading(false);
       setMessage("");
     }
   };
+
   if (error) {
     return (
       <div className="p-6 flex flex-col items-center">
@@ -247,39 +266,84 @@ function Query() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 w-full">
-          {queries.queries_list.map((query) => (
-            <Card
-              key={query.id}
-              className="flex flex-col justify-between p-4 border hover:shadow-xl bg-[#381952]"
-            >
-              <CardHeader className="flex flex-row justify-end">
-                <Checkbox
-                  className="border-gray-400"
-                  checked={selectedQueries.has(query.id)}
-                  onCheckedChange={() => handleCheckboxChange(query.id)}
-                />
-              </CardHeader>
-              <CardContent className="text-white text-sm">
-                {query.explanation || "No title available"}
-                <div className="w-full h-15 rounded-lg overflow-hidden">
-                  <img
-                    src={getChartThumbnail(query.chart_type)}
-                    alt={`${query.chart_type} preview`}
-                    className="w-full h-full object-contain"
+        <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 w-full">
+            {queries.queries_list.map((query) => (
+              <Card
+                key={query.id}
+                className="flex flex-col justify-between p-4 border hover:shadow-xl bg-[#381952]"
+              >
+                <CardHeader className="flex flex-row justify-end">
+                  <Checkbox
+                    className="border-gray-400"
+                    checked={selectedQueries.has(query.id)}
+                    onCheckedChange={() => handleCheckboxChange(query.id)}
                   />
+                </CardHeader>
+                <CardContent className="text-white text-sm">
+                  {query.explanation || "No title available"}
+                  <div className="w-full h-15 rounded-lg overflow-hidden">
+                    <img
+                      src={getChartThumbnail(query.chart_type)}
+                      alt={`${query.chart_type} preview`}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    className="w-full bg-[#C4BEEE]"
+                    onClick={() => handlePreview(query)}
+                  >
+                    Preview
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 w-full">
+            {queries.user_generated &&
+              queries.user_generated.map((query) => (
+                <div>
+                  <h1 className="text-2xl font-bold p-3">
+                    Your custom queries
+                  </h1>
+                  <Card
+                    key={query.id}
+                    className="flex flex-col justify-between p-4 border hover:shadow-xl bg-[#9976b5]"
+                  >
+                    <CardHeader className="flex flex-row justify-end">
+                      <Checkbox
+                        className="border-gray-400"
+                        checked={selectedQueries.has(query.id)}
+                        onCheckedChange={() => handleCheckboxChange(query.id)}
+                      />
+                    </CardHeader>
+                    <CardContent className="text-white text-sm">
+                      <p className="text-gray-300 text-sm">
+                        {query.explanation}
+                      </p>
+                      <div className="w-full h-15 rounded-lg overflow-hidden mt-2">
+                        <img
+                          src={getChartThumbnail(query.chart_type)}
+                          alt={`${query.chart_type} preview`}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    </CardContent>
+                    <CardFooter>
+                      <Button
+                        className="w-full bg-[#D4CEEE]"
+                        onClick={() => handlePreview(query)}
+                      >
+                        Preview
+                      </Button>
+                    </CardFooter>
+                  </Card>
                 </div>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  className="w-full bg-[#C4BEEE]"
-                  onClick={() => handlePreview(query)}
-                >
-                  Preview
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+              ))}
+          </div>
         </div>
       )}
       {selectedQueries.size > 0 && (
@@ -358,8 +422,20 @@ function Query() {
             onChange={(e) => setMessage(e.target.value)}
             className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
           />
-          <Button type="submit" className="bg-[#381952]" onClick={handleSend}>
-            Execute
+          <Button
+            type="submit"
+            className="bg-[#381952]"
+            onClick={handleSend}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              "Execute"
+            )}
           </Button>
         </div>
       </div>

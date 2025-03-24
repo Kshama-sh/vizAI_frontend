@@ -8,6 +8,7 @@ import useQueryStore from "@/store/queryStore";
 import DynamicChart from "../components/static/DynamicChart";
 import { apiRequest } from "@/api/access_token";
 import RightSideBar from "../components/static/RightsideBar";
+import { fetchChartsForDashboard } from "@/api/dashboardApi";
 
 function Dashboard() {
   const [hoveredCard, setHoveredCard] = useState(null);
@@ -37,7 +38,7 @@ function Dashboard() {
       setDashboards(JSON.parse(savedDashboards));
     } else {
       setDashboards([
-        { id: "default", name: "Main Dashboard", isActive: true },
+        { id: "default", name: "Untitled Dashboard", isActive: true },
       ]);
     }
   }, []);
@@ -214,6 +215,40 @@ function Dashboard() {
       setIsLoading(false);
     }
   };
+
+  const handleDateRange = async () => {
+    if (!startDate || !endDate) {
+      setError("Please select both start and end dates");
+      return;
+    }
+
+    const activeDashboardId = dashboards.find((d) => d.isActive)?.id;
+    if (!activeDashboardId) {
+      setError("No active dashboard found");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await apiRequest(
+        "POST",
+        `${import.meta.env.VITE_BACKEND_URL}/execute-query/update-time-based`,
+        {
+          dashboard_id: activeDashboardId,
+          min_date: startDate,
+          max_date: endDate,
+        }
+      );
+      fetchDashboardChartData(activeDashboardId);
+      setError(null);
+    } catch (error) {
+      console.error("Failed to update date range:", error);
+      setError(error.message || "Failed to update date range");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const activeDashboard = dashboards.find((d) => d.isActive) ||
     dashboards[0] || { name: "Dashboard" };
 
@@ -230,7 +265,7 @@ function Dashboard() {
         <div>
           <Label>Start Date</Label>
           <input
-            type="month"
+            type="date"
             className="border p-2 rounded"
             placeholder="Start Date"
             value={startDate}
@@ -240,14 +275,19 @@ function Dashboard() {
         <div>
           <Label>End Date</Label>
           <input
-            type="month"
+            type="date"
             className="border p-2 rounded"
             placeholder="End Date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
           />
         </div>
-        <Button>Apply Date Range</Button>
+        <Button
+          onClick={handleDateRange}
+          disabled={loading || !startDate || !endDate}
+        >
+          {loading ? "Applying..." : "Apply Date Range"}
+        </Button>
       </div>
       <div className="flex h-screen">
         <Button

@@ -160,15 +160,9 @@ function Database() {
         "Setup completed, fetching queries for dbEntryId:",
         dbEntryId
       );
-
-      // Store role in localStorage
       localStorage.setItem("user-role", formData.role);
       localStorage.setItem("current-db-entry-id", dbEntryId);
-
-      // Create or get dashboard first
       await createOrGetDashboard();
-
-      // Then fetch query titles
       await fetchQueryTitles(dbEntryId);
 
       alert("Setup Completed!");
