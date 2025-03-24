@@ -5,7 +5,10 @@ import { apiRequest } from "@/api/access_token";
 const useQueryStore = create(
   persist(
     (set, get) => ({
-      queries: [],
+      queries: {
+        queries_list: [],
+        user_generated: [],
+      },
       selectedQuery: null,
       queryResult: null,
       dashboardQueries: [],
@@ -64,34 +67,21 @@ const useQueryStore = create(
           console.log("Fetching from URL:", url);
           const response = await apiRequest("GET", url);
           console.log("API Response:", response);
+
           if (!response) {
             console.error(" No response received");
             throw new Error("No response received");
           }
-          if (Array.isArray(response)) {
-            console.log("Response is an array with", response.length, "items");
-            set({ queries: response });
-            return;
-          }
-          if (response && !response.data && typeof response === "object") {
-            console.log("Response is an object, checking if valid");
-            set({ queries: response });
-            return;
-          }
-          if (response && response.data) {
-            const queries = Array.isArray(response.data)
-              ? response.data
-              : response.data.queries || [];
-            if (!Array.isArray(queries)) {
-              console.error(" Queries is not an array:", queries);
-              throw new Error("Invalid queries format");
-            }
-            set({ queries });
-            console.log(" Queries stored successfully:", queries);
-            return;
-          }
-          console.error(" Unhandled response format:", response);
-          throw new Error("Invalid API response");
+
+          const queries_list = response.queries_list || [];
+          const user_generated = response.user_generated || [];
+
+          set({ queries: { queries_list, user_generated } });
+
+          console.log("Queries stored successfully:", {
+            queries_list,
+            user_generated,
+          });
         } catch (error) {
           console.error(" Error fetching queries:", error);
         }
@@ -138,11 +128,11 @@ const useQueryStore = create(
 
       executeQuery: async (queryId) => {
         console.log("Executing query ID:", queryId);
-
         try {
-          const query = get().queries.queries_list.find(
-            (q) => q.id === queryId
-          );
+          let query = get().queries.queries_list.find((q) => q.id === queryId);
+          if (!query && get().queries.user_generated) {
+            query = get().queries.user_generated.find((q) => q.id === queryId);
+          }
 
           if (!query) {
             console.error("Query not found:", queryId);
@@ -157,7 +147,6 @@ const useQueryStore = create(
 
           const url = `${import.meta.env.VITE_BACKEND_URL}/execute-query/`;
           const requestBody = { query_id: queryId, external_db_id: dbEntryId };
-
           const response = await apiRequest("POST", url, requestBody);
 
           if (!response || response.error) {
@@ -172,12 +161,13 @@ const useQueryStore = create(
           }
 
           console.log("Query Result:", response);
-
           let formattedResult = {
             query: response.query || query.query || "No query provided",
             data: Array.isArray(response.result) ? response.result : [],
-            chartType: response.chartType || query.chartType || "line",
+            chartType: response.chartType || query.chart_type || "line",
             report: response.report || "",
+            x_axis: response.x_axis || "",
+            y_axis: response.y_axis || "",
           };
 
           if (!formattedResult.data.length) {
@@ -185,7 +175,6 @@ const useQueryStore = create(
           }
 
           set({ queryResult: formattedResult });
-
           return formattedResult;
         } catch (error) {
           console.error("Error executing query:", error);
@@ -195,46 +184,6 @@ const useQueryStore = create(
           return null;
         }
       },
-
-      updateQueriesWithDateRange: async (queryIds, startDate, endDate) => {
-        try {
-          set({ isUpdatingQueries: true });
-
-          const results = [];
-          const allQueries = get().queries;
-          const queriesToUpdate =
-            queryIds.length > 0
-              ? queryIds
-                  .map((id) => allQueries.find((q) => q.id === id))
-                  .filter(Boolean)
-              : allQueries;
-
-          for (const query of queriesToUpdate) {
-            const result = await get().executeQuery(
-              query.id,
-              startDate,
-              endDate
-            );
-            if (result) {
-              results.push({
-                queryId: query.id,
-                result,
-              });
-            }
-          }
-
-          set({
-            batchQueryResults: results,
-            isUpdatingQueries: false,
-          });
-          return results;
-        } catch (error) {
-          console.error("Error updating queries with date range:", error);
-          set({ isUpdatingQueries: false });
-          return [];
-        }
-      },
-
       setSelectedQuery: (query) => set({ selectedQuery: query }),
 
       addQueriesToDashboard: async (
