@@ -20,4 +20,5 @@ RUN npm run build
 EXPOSE 5173
 
 # Start the application using serve
-CMD ["npx", "serve", "-s", "build", "-l", "5173"]
+# CMD ["npx", "serve", "-s", "build", "-l", "5173"]
+CMD ["npx", "serve", "-s", "dist", "-l", "5173"]
