@@ -2,7 +2,9 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-
+import chart from "/assets/chart.png";
+import mysql_logo from "/assets/mysql_logo.svg";
+import postgresql_logo from "/assets/postgresql_logo.png";
 const HeroSection = () => {
   return (
     <main className="bg-white flex flex-col gap-10 sm:gap-20 py-10 sm:py-20 items-center text-center w-full ">
@@ -40,7 +42,7 @@ const HeroSection = () => {
         </Card>
       </section>
       <img
-        src="/assets/chart.png"
+        src={chart}
         className="max-w-5xl rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 "
         alt="Dashboard Preview"
       />
@@ -57,7 +59,7 @@ const HeroSection = () => {
           <Card className="shadow-lg hover:shadow-xl transition-shadow rounded-2xl bg-[#230C33]">
             <CardContent className="flex items-center justify-center h-36">
               <img
-                src="/assets/mysql_logo.svg"
+                src={mysql_logo}
                 alt="MySQL"
                 className="max-h-full object-contain"
               />
@@ -67,7 +69,7 @@ const HeroSection = () => {
           <Card className="shadow-lg hover:shadow-xl transition-shadow rounded-2xl bg-[#230C33]">
             <CardContent className="flex items-center justify-center h-36">
               <img
-                src="/assets/postgresql-logo.png"
+                src={postgresql_logo}
                 alt="Postgres"
                 className="max-h-full object-contain"
               />
