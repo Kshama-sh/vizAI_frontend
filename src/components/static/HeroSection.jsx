@@ -40,7 +40,7 @@ const HeroSection = () => {
         </Card>
       </section>
       <img
-        src="src/assets/chart.png"
+        src="/assets/chart.png"
         className="max-w-5xl rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 "
         alt="Dashboard Preview"
       />
@@ -57,7 +57,7 @@ const HeroSection = () => {
           <Card className="shadow-lg hover:shadow-xl transition-shadow rounded-2xl bg-[#230C33]">
             <CardContent className="flex items-center justify-center h-36">
               <img
-                src="src/assets/mysql_logo.svg"
+                src="/assets/mysql_logo.svg"
                 alt="MySQL"
                 className="max-h-full object-contain"
               />
@@ -67,7 +67,7 @@ const HeroSection = () => {
           <Card className="shadow-lg hover:shadow-xl transition-shadow rounded-2xl bg-[#230C33]">
             <CardContent className="flex items-center justify-center h-36">
               <img
-                src="src/assets/postgresql-logo.png"
+                src="/assets/postgresql-logo.png"
                 alt="Postgres"
                 className="max-h-full object-contain"
               />
