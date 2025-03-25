@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Bell, Menu, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logo from "/Users/kshama/Documents/webknot/vizAI/front/assets/logo.png";
+import logo from "/assets/logo.png";
 import {
   DropdownMenu,
   DropdownMenuContent,
