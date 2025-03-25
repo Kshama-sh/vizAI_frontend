@@ -1,9 +1,9 @@
-import barChart from "../assets/thumbnails/bar-chart.png";
-import lineChart from "../assets/thumbnails/line-chart.png";
-import pieChart from "../assets/thumbnails/pie-chart.png";
-import scatterPlot from "../assets/thumbnails/scatter-plot.png"; // Ensure it's imported
-import areaChart from "../assets/thumbnails/area-chart.png";
-import donutChart from "../assets/thumbnails/donut-chart.png"; // Ensure it's imported
+import barChart from "/assets/thumbnails/bar-chart.png";
+import lineChart from "/assets/thumbnails/line-chart.png";
+import pieChart from "/assets/thumbnails/pie-chart.png";
+import scatterPlot from "/assets/thumbnails/scatter-plot.png";
+import areaChart from "/assets/thumbnails/area-chart.png";
+import donutChart from "/assets/thumbnails/donut-chart.png";
 
 const chartThumbnails = {
   bar: barChart,
